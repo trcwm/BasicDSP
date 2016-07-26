@@ -1,5 +1,9 @@
 #include <QCoreApplication>
 #include <QDebug>
+#include <sstream>
+#include "reader.h"
+#include "tokenizer.h"
+#include "parser.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
@@ -63,4 +67,45 @@ void MainWindow::on_actionExit_triggered()
     //TODO: check for unsaved things
     //      quit any running threads.
     QCoreApplication::exit(0);
+}
+
+void MainWindow::on_runButton_clicked()
+{
+    Parser    parser;
+    Tokenizer tokenizer;
+
+    Reader *reader = Reader::create(ui->sourceEditor->toPlainText());
+    if (reader == 0)
+    {
+        // error, probably due to an empty source code editor
+        qDebug() << "Error: no source code";
+        return;
+    }
+
+    std::vector<token_t> tokens;
+    bool ok = tokenizer.process(reader, tokens);
+    if (!ok)
+    {
+        // tokenize error
+        qDebug() << "Tokenizer error: " << tokenizer.getErrorString().c_str();
+    }
+    else
+    {
+        qDebug() << "Tokenizer produced " << tokens.size() << " tokens";
+    }
+
+    for(uint32_t i=0; i<tokens.size(); i++)
+    {
+        qDebug() << tokens[i].tokID;
+    }
+
+    statements_t statements;
+    parser.process(tokens, statements);
+
+    std::stringstream ss;
+    for(uint32_t i=0; i<statements.size(); i++)
+    {
+        statements[i]->dump(ss,0);
+    }
+    qDebug() << ss.str().c_str();
 }

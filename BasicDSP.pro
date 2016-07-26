@@ -59,11 +59,19 @@ SOURCES += main.cpp\
         vumeter.cpp\
         virtualmachine.cpp\
         namedslider.cpp\
+        parser.cpp\
+        tokenizer.cpp\
+        reader.cpp\
+        logging.cpp\
         mainwindow.cpp
 
 HEADERS  += mainwindow.h\
             vumeter.h\
             namedslider.h\
+            parser.h\
+            tokenizer.h\
+            reader.h\
+            logging.h\
             virtualmachine.h
 
 FORMS    += mainwindow.ui

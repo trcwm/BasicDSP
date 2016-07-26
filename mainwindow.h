@@ -23,6 +23,8 @@ private slots:
     void on_actionExit_triggered();
     void on_GUITimer();
 
+    void on_runButton_clicked();
+
 private:
     Ui::MainWindow *ui;
 
