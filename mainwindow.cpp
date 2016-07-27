@@ -100,7 +100,7 @@ void MainWindow::on_runButton_clicked()
     }
 
     statements_t statements;
-    parser.process(tokens, statements);
+    bool parseOK = parser.process(tokens, statements);
 
     std::stringstream ss;
     for(uint32_t i=0; i<statements.size(); i++)
@@ -108,4 +108,16 @@ void MainWindow::on_runButton_clicked()
         statements[i]->dump(ss,0);
     }
     qDebug() << ss.str().c_str();
+
+    if (!parseOK)
+    {
+        Reader::position_info pos = parser.getLastErrorPos();
+        QString txt = QString("Program error on line %1: ").arg(pos.line+1);
+        txt.append(parser.getLastError().c_str());
+        ui->statusBar->showMessage(txt);
+    }
+    else
+    {
+        ui->statusBar->showMessage("Program accepted!");
+    }
 }

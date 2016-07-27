@@ -86,14 +86,23 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
         // if found, exit this while loop..
         if (c == 0)
         {
-            state = S_DONE;
+            // if the state is not S_BEGIN
+            // it means we were still
+            // processing the previous token
+            //
+            // we continue execution with c == 0
+            // to that the token will be emitted
+            // and the state will be S_BEGIN
+            if (state == S_BEGIN)
+            {
+                tok.txt.clear();
+                tok.pos = r->getPos();
+                tok.tokID = TOK_EOF;
+                result.push_back(tok);
 
-            tok.txt.clear();
-            tok.pos = r->getPos();
-            tok.tokID = TOK_EOF;
-            result.push_back(tok);
-
-            continue;
+                state = S_DONE;
+                continue;   // exit asap.
+            }
         }
 
         switch(state)

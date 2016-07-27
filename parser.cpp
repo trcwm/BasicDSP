@@ -135,12 +135,14 @@ bool Parser::acceptAssignment(state_t &s, ASTNodePtr newNode)
         return false;
     }
 
+    /*
     if (!match(s, TOK_SEMICOL))
     {
         error(s,"Assignments must end with a semicolon.");
         s = savestate;
         return false;
     }
+    */
 
     newNode->type = ASTNode::NodeAssign;
     newNode->info.txt  = identifier;
@@ -322,6 +324,7 @@ bool Parser::acceptFactor(state_t &s, ASTNodePtr newNode)
         return true;
     }
 
+    s = savestate;
     if (match(s, TOK_INTEGER))
     {
         newNode->type = ASTNode::NodeInteger;
@@ -331,11 +334,9 @@ bool Parser::acceptFactor(state_t &s, ASTNodePtr newNode)
 
     if (match(s, TOK_FLOAT))
     {
-        error(s, "literal floats are not supported!");
-        return false;
-        //newNode->type = ASTNode::NodeIdent;
-        //newNode->info.txt = getToken(s, -1).txt;
-        //return true;    // IDENT
+        newNode->type = ASTNode::NodeFloat;
+        newNode->info.floatVal = atof(getToken(s, -1).txt.c_str());
+        return true;    // FLOAT
     }
 
     if (match(s, TOK_IDENT))
@@ -354,7 +355,8 @@ bool Parser::acceptFactor1(state_t &s, ASTNodePtr newNode)
     ASTNodePtr argNode(new ASTNode());
 
     state_t savestate = s;
-    if (getToken(s).tokID < 100)
+    token_t func = getToken(s);
+    if (func.tokID < 100)
     {
         s = savestate;
         return false;
@@ -377,7 +379,11 @@ bool Parser::acceptFactor1(state_t &s, ASTNodePtr newNode)
         return false;
     }
 
+    // lookup the function in the function list
+
+
     newNode->type = ASTNode::NodeFunction;
+    newNode->info.txt = func.txt;
     newNode->left = 0;
     newNode->right = argNode;
     return true;

@@ -23,11 +23,8 @@
 struct varInfo
 {
     std::string     txt;        // identifier name, integer or float value.
-    int32_t         fracBits;   // number of factional bits in INPUT definition
-    int32_t         intBits;    // number of integer bits in INPUT defintion
-    int32_t         csdBits;    // number of CSD factors/bits
-    double          csdFloat;   // desired value of CSD coefficient
-    int32_t         intVal;     // integer value
+    int32_t         intVal;
+    float           floatVal;
 };
 
 /** Abstract Syntax Tree Node */
@@ -50,9 +47,10 @@ struct ASTNode
 
     ASTNode(node_t nodeType = NodeUnknown)
     {
-        left = 0;
-        right = 0;
-        type = nodeType;
+        left        = 0;
+        right       = 0;
+        type        = nodeType;
+        functionID  = 0xFFFFFFFF;
     }
 
     void dump(std::ostream &stream, uint32_t level = 0)
@@ -95,13 +93,13 @@ struct ASTNode
             stream << info.txt;
             break;
         case NodeInteger:
-            stream << info.intVal;
+            stream << info.intVal << "(INT)";
             break;
         case NodeFunction:
-            stream << "Function";
+            stream << "Function " << info.txt;
             break;
         case NodeFloat:
-            stream << "FLOATVAL";
+            stream << info.floatVal << "(FLOAT)";
             //stream << floatVal;
             break;
         default:
@@ -111,8 +109,9 @@ struct ASTNode
         stream << std::endl;
     }
 
-    node_t          type;   // the type of the node
-    varInfo         info;   // variable related information
+    node_t          type;       // the type of the node
+    varInfo         info;       // variable related information
+    uint32_t        functionID; // function ID
 
     std::shared_ptr<ASTNode>  left;
     std::shared_ptr<ASTNode>  right;
