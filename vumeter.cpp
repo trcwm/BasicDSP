@@ -51,6 +51,8 @@ void VUMeter::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
 
+    (event);
+
     float db = 20.0*log10(m_level);
     db = db < m_dbmin ? m_dbmin : db;
     db = db > m_dbmax ? m_dbmax : db;

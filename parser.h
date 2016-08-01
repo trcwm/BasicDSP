@@ -1,12 +1,10 @@
 /*
 
-  FPTOOL - a fixed-point math to VHDL generation tool
-
   Description:  The parser takes a list of tokens,
                 checks the grammar and produces
                 a parse tree.
 
-  Author: Niels A. Moseley
+  Author: Niels A. Moseley (c) 2016
 
 */
 
@@ -33,11 +31,11 @@ struct ASTNode
   enum node_t {NodeUnknown, NodeHead,
                NodeStatement,
                NodeAssign,
-               NodeInput,
                NodeTemp,
                NodeAdd,
                NodeSub,
                NodeMul,
+               NodeDiv,
                NodeFunction,
                NodeUnaryMinus,
                NodeIdent,
@@ -85,6 +83,9 @@ struct ASTNode
             break;
         case NodeMul:
             stream << "*";
+            break;
+        case NodeDiv:
+            stream << "\\";
             break;
         case NodeUnaryMinus:
             stream << "U-";
@@ -174,6 +175,7 @@ protected:
     bool acceptTerm(state_t &s, ASTNodePtr newNode);
     bool acceptTerm1(state_t &s, ASTNodePtr newNode);
     bool acceptTerm2(state_t &s, ASTNodePtr newNode);
+    bool acceptTerm3(state_t &s, ASTNodePtr newNode);
 
     bool acceptFactor(state_t &s, ASTNodePtr newNode);
     bool acceptFactor1(state_t &s, ASTNodePtr newNode);

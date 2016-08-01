@@ -23,9 +23,14 @@ class NamedSlider : public QWidget
 
 public:
     NamedSlider(QString name, QWidget *parent);
-    virtual ~NamedSlider() {};
+    virtual ~NamedSlider() {}
 
     QSize sizeHint() const;
+
+    float getValue() const
+    {
+        return v;
+    }
 
 signals:
     void valueChanged(float v);
@@ -40,7 +45,7 @@ protected:
     QLabel          *m_label;
     QLineEdit       *m_edit;
     QDoubleValidator m_validator;
-    float           v;
+    float            v;
 };
 
 #endif

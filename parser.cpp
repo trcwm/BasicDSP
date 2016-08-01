@@ -1,12 +1,10 @@
 /*
 
-  FPTOOL - a fixed-point math to VHDL generation tool
-
   Description:  The parser takes a list of tokens,
                 checks the grammar and produces
                 a parse tree.
 
-  Author: Niels A. Moseley
+  Author: Niels A. Moseley (c) 2016
 
 */
 
@@ -26,6 +24,7 @@ void Parser::error(const state_t &s, const std::string &txt)
 
 void Parser::error(uint32_t dummy, const std::string &txt)
 {
+    (dummy);
     m_lastError = txt;
     std::cout << txt.c_str() << std::endl;
 }
@@ -237,7 +236,7 @@ bool Parser::acceptExpr2(state_t &s, ASTNodePtr newNode)
 
 bool Parser::acceptTerm(state_t &s, ASTNodePtr newNode)
 {
-    // production: term1 | term2 | factor
+    // production: term1 | term2 | term3 | factor
     state_t savestate = s;
     if (acceptTerm1(s, newNode))
     {
@@ -246,6 +245,12 @@ bool Parser::acceptTerm(state_t &s, ASTNodePtr newNode)
 
     s = savestate;
     if (acceptTerm2(s, newNode))
+    {
+        return true;
+    }
+
+    s = savestate;
+    if (acceptTerm3(s, newNode))
     {
         return true;
     }
@@ -302,6 +307,34 @@ bool Parser::acceptTerm2(state_t &s, ASTNodePtr newNode)
         return false;
     }
     newNode->type = ASTNode::NodeMul;
+    newNode->left = factorNode;
+    newNode->right = termNode;
+    return true;
+}
+
+bool Parser::acceptTerm3(state_t &s, ASTNodePtr newNode)
+{
+    // production: factor / term
+    ASTNodePtr factorNode(new ASTNode());
+    ASTNodePtr termNode(new ASTNode());
+
+    state_t savestate = s;
+    if (!acceptFactor(s, factorNode))
+    {
+        s = savestate;
+        return false;
+    }
+    if (!match(s, TOK_SLASH))
+    {
+        s = savestate;
+        return false;
+    }
+    if (!acceptTerm(s, termNode))
+    {
+        s = savestate;
+        return false;
+    }
+    newNode->type = ASTNode::NodeDiv;
     newNode->left = factorNode;
     newNode->right = termNode;
     return true;
@@ -368,6 +401,9 @@ bool Parser::acceptFactor1(state_t &s, ASTNodePtr newNode)
         s = savestate;
         return false;
     }
+    // TODO:
+    // FIXME:
+    // add functions with more than one argument
     if (!acceptExpr(s, argNode))
     {
         s = savestate;
@@ -384,6 +420,7 @@ bool Parser::acceptFactor1(state_t &s, ASTNodePtr newNode)
 
     newNode->type = ASTNode::NodeFunction;
     newNode->info.txt = func.txt;
+    newNode->functionID = func.tokID;
     newNode->left = 0;
     newNode->right = argNode;
     return true;

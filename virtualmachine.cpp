@@ -1,15 +1,32 @@
 /*
 
   Virtual machine for running basic DSP programs
-  Niels A. Moseley 2016
+  Niels A. Moseley 2008-2016
+  Pieter-Tjerk de Boer 2008-2016
 
   License: GPLv2
 
 */
 
 #include <QDebug>
+#include <QMutexLocker>
 #include <stdint.h>
+#include <stdlib.h>
+#include <algorithm>
 #include "virtualmachine.h"
+
+int32_t VM::findVariableByName(const variables_t &vars, const std::string &name)
+{
+    size_t N = vars.size();
+    size_t i=0;
+    while(i<N)
+    {
+        if (vars[i].name == name)
+            return (int32_t)i;
+        i++;
+    }
+    return -1;
+}
 
 static int portaudioCallback(
         const void *inputBuffer,
@@ -39,7 +56,8 @@ static int portaudioCallback(
 
 VirtualMachine::VirtualMachine(QMainWindow *guiWindow)
     : m_guiWindow(guiWindow),
-      m_stream(0)
+      m_stream(0),
+      m_runState(false)
 {
     Pa_Initialize();
 
@@ -60,6 +78,22 @@ VirtualMachine::VirtualMachine(QMainWindow *guiWindow)
             qDebug() << " API: " << hinfo->name;
         }
     }
+
+    m_lout = 0;
+    m_lin  = 0;
+    m_rout = 0;
+    m_rin  = 0;
+    m_in   = 0;
+    m_out  = 0;
+    m_slider[0] = 0;
+    m_slider[1] = 0;
+    m_slider[2] = 0;
+    m_slider[3] = 0;
+
+    m_leftLevel = 0.0f;
+    m_rightLevel = 0.0f;
+
+    m_source = SRC_SOUNDCARD;
 }
 
 VirtualMachine::~VirtualMachine()
@@ -67,35 +101,58 @@ VirtualMachine::~VirtualMachine()
     Pa_Terminate();
 }
 
-void VirtualMachine::loadProgram()
+void VirtualMachine::loadProgram(const VM::program_t &program, const VM::variables_t &variables)
 {
-    // make room for default variables
-    //
-    //
-    m_vars.resize(6);
-    m_vars[vidx_zero].name = "zero";
-    m_vars[vidx_zero].value = 0.0f;
-    m_vars[vidx_samplerate].name = "samplerate";
-    m_vars[vidx_samplerate].value = 44100.0f;
-    m_vars[vidx_inl].name = "inl";
-    m_vars[vidx_inl].value = 0.0f;
-    m_vars[vidx_inr].name = "inr";
-    m_vars[vidx_inr].value = 0.0f;
-    m_vars[vidx_in].name = "in";
-    m_vars[vidx_in].value = 0.0f;
-    m_vars[vidx_outl].name = "outl";
-    m_vars[vidx_outl].value = 0.0f;
-    m_vars[vidx_outr].name = "outr";
-    m_vars[vidx_outr].value = 0.0f;
-    m_vars[vidx_out].name = "out";
-    m_vars[vidx_out].value = 0.0f;
+    QMutexLocker lock(&m_controlMutex);
+
+    m_lout = 0;
+    m_lin  = 0;
+    m_rout = 0;
+    m_rin  = 0;
+    m_in   = 0;
+    m_out  = 0;
+    m_slider[0] = 0;
+    m_slider[1] = 0;
+    m_slider[2] = 0;
+    m_slider[3] = 0;
+
+    m_vars = variables;
+    m_program = program;
+
+    // find the lout, rout, lin, rin, in, out
+    // variables.
+    int32_t idx = VM::findVariableByName(m_vars, "inl");
+    if (idx != -1) m_lin = &(m_vars[idx].value);
+    idx = VM::findVariableByName(m_vars, "inr");
+    if (idx != -1) m_rin = &(m_vars[idx].value);
+    idx = VM::findVariableByName(m_vars, "outl");
+    if (idx != -1) m_lout = &(m_vars[idx].value);
+    idx = VM::findVariableByName(m_vars, "outr");
+    if (idx != -1) m_rout = &(m_vars[idx].value);
+    idx = VM::findVariableByName(m_vars, "out");
+    if (idx != -1) m_out = &(m_vars[idx].value);
+    idx = VM::findVariableByName(m_vars, "in");
+    if (idx != -1) m_in = &(m_vars[idx].value);
+
+    // setup sliders
+    idx = VM::findVariableByName(m_vars, "slider1");
+    if (idx != -1) m_slider[0] = &(m_vars[idx].value);
+    idx = VM::findVariableByName(m_vars, "slider2");
+    if (idx != -1) m_slider[1] = &(m_vars[idx].value);
+    idx = VM::findVariableByName(m_vars, "slider3");
+    if (idx != -1) m_slider[2] = &(m_vars[idx].value);
+    idx = VM::findVariableByName(m_vars, "slider4");
+    if (idx != -1) m_slider[3] = &(m_vars[idx].value);
 }
 
 bool VirtualMachine::start()
 {
+    QMutexLocker lock(&m_controlMutex);
+
     // check if portaudio is already running
     if (m_stream != 0)
     {
+        m_runState = false;
         Pa_AbortStream(m_stream);
         Pa_CloseStream(m_stream);
     }
@@ -135,6 +192,7 @@ bool VirtualMachine::start()
         if (error == paNoError)
         {
             qDebug() << "Stream started!";
+            m_runState = true;
             return true;
         }
     }
@@ -146,6 +204,8 @@ bool VirtualMachine::start()
 
 void VirtualMachine::stop()
 {
+    QMutexLocker lock(&m_controlMutex);
+
     if (m_stream != 0)
     {
         Pa_AbortStream(m_stream);
@@ -154,20 +214,87 @@ void VirtualMachine::stop()
     }
     m_leftLevel = 0.0f;
     m_rightLevel = 0.0f;
+
+    m_runState = false;
+}
+
+void VirtualMachine::setSlider(uint32_t id, float value)
+{
+    QMutexLocker lock(&m_controlMutex);
+    if (id < 4)
+    {
+        if (m_slider[id] != 0)
+        {
+            *m_slider[id]=value;
+        }
+    }
+}
+
+void VirtualMachine::setSource(src_t source)
+{
+    QMutexLocker locker(&m_controlMutex);
+    m_source = source;
 }
 
 void VirtualMachine::processSamples(float *inbuf, float *outbuf,
                                     uint32_t framesPerBuffer)
 {
-    static float accu = 0.0f;
+    // as this is a time-critical function that is
+    // called by the audio subsystem
+    // blocking it is not a good idea
+    // therefore, we'll try to lock the mutex
+    // but if that fails, we return a muted buffer
+    //
 
+    bool success = m_controlMutex.tryLock();
+    if (!success)
+    {
+        for(uint32_t i=0; i<framesPerBuffer; i++)
+        {
+            *outbuf++ = 0.0f;
+            *outbuf++ = 0.0f;
+        }
+        return;
+    }
+
+    // todo: make multiplier respect the frames per buffer
+    // so we get block-size independent VU meter behaviour.
     m_leftLevel *= 0.9f;
     m_rightLevel *= 0.9f;
 
     for(uint32_t i=0; i<framesPerBuffer; i++)
     {
-        float left = *inbuf++;
-        float right = *inbuf++;
+        float left;
+        float right;
+
+        switch(m_source)
+        {
+        default:
+        case SRC_SOUNDCARD:
+            left = *inbuf++;
+            right = *inbuf++;
+            break;
+        case SRC_WAV:
+            left = 0.0f;
+            right = 0.0f;
+            break;
+        case SRC_NOISE:
+            left = static_cast<float>(rand())/RAND_MAX;
+            right = static_cast<float>(rand())/RAND_MAX;
+            break;
+        case SRC_SINE:
+            left = 0.0f;
+            right = 0.0f;
+            break;
+        case SRC_QUADSINE:
+            left = 0.0f;
+            right = 0.0f;
+            break;
+        case SRC_IMPULSE:
+            left = 0.0f;
+            right = 0.0f;
+        }
+
         float left_abs = fabs(left*1000.0f);
         float right_abs = fabs(right*1000.0f);
 
@@ -179,18 +306,9 @@ void VirtualMachine::processSamples(float *inbuf, float *outbuf,
         {
             m_rightLevel = right_abs;
         }
-
-        //*outbuf++ = sin(3.1415927f*accu);
-        //*outbuf++ = sin(3.1415927f*accu);
-        *outbuf++ = 0;
-        *outbuf++ = 0;
-
-        accu += 0.05f;
-        if (accu > 2.0f)
-        {
-            accu -= 2.0f;
-        }
+        executeProgram(left, right, outbuf[i<<1], outbuf[(i<<1)+1]);
     }
+    m_controlMutex.unlock();
 }
 
 uint32_t VirtualMachine::execFIR(uint32_t n, float *stack)
@@ -205,18 +323,37 @@ uint32_t VirtualMachine::execBiquad(uint32_t n, float *stack)
 
 void VirtualMachine::executeProgram(float inLeft, float inRight, float &outLeft, float &outRight)
 {
-    const uint32_t instructions = m_program.size();
-    uint32_t pc = 0;    // program counter
-    uint32_t sp = 0;    // stack pointer
+    const size_t instructions = m_program.size();
+    size_t pc = 0;    // program counter
+    size_t sp = 0;    // stack pointer
     float stack[2048];
 
-    m_vars[vidx_inl].value = inLeft;
-    m_vars[vidx_inr].value = inRight;
-    m_vars[vidx_in].value = (inLeft+inRight)/2.0f;
+    // check if we have a program ..
+    // or if we're not running...
+    if ((instructions == 0) || (!m_runState))
+    {
+        outLeft = 0.0f;
+        outRight = 0.0f;
+        return;
+    }
+
+    // setup input signal
+    if (m_in != 0)
+    {
+        *m_in = (inLeft + inRight) / 2.0f;
+    }
+    if (m_lin != 0)
+    {
+        *m_lin = inLeft;
+    }
+    if (m_rin != 0)
+    {
+        *m_rin = inRight;
+    }
 
     while(pc < instructions)
     {
-        instruction_t instruction = m_program[pc++];
+        VM::instruction_t instruction = m_program[pc++];
         if (instruction.icode & 0x80000000)
         {
             // special instruction with additional parameter
@@ -250,7 +387,8 @@ void VirtualMachine::executeProgram(float inLeft, float inRight, float &outLeft,
                 break;
             case P_sub:
                 sp--;
-                stack[sp-1]-=stack[sp];
+                stack[sp-1]=stack[sp-1]-stack[sp];
+                //qDebug() << stack[sp-1];
                 break;
             case P_mul:
                 sp--;
@@ -259,6 +397,9 @@ void VirtualMachine::executeProgram(float inLeft, float inRight, float &outLeft,
             case P_div:
                 sp--;
                 stack[sp-1]/=stack[sp];
+                break;
+            case P_neg:
+                stack[sp-1]=-stack[sp-1];
                 break;
             case P_sin:
                 stack[sp-1]=sin(stack[sp-1]);
@@ -278,7 +419,7 @@ void VirtualMachine::executeProgram(float inLeft, float inRight, float &outLeft,
             case P_cos1:
                 stack[sp-1]=cos(2*M_PI*stack[sp-1]);
                 break;
-            case P_const:
+            case P_literal:
                 stack[sp++]=m_program[pc].value;
                 pc++;
                 break;
@@ -303,6 +444,10 @@ void VirtualMachine::executeProgram(float inLeft, float inRight, float &outLeft,
                 sp--;
                 stack[sp-1]=pow(stack[sp-1],stack[sp]);
                 break;
+            case P_limit:
+                stack[sp-1]=std::min(stack[sp-1],1.0f);
+                stack[sp-1]=std::max(stack[sp-1],-1.0f);
+                break;
             default:
                 // TODO: produce error
                 break;
@@ -315,18 +460,119 @@ void VirtualMachine::executeProgram(float inLeft, float inRight, float &outLeft,
         }
     }
 
-    bool m_stereoOut = true;
-    if (m_stereoOut)
+    if (m_out != 0)
     {
-        outLeft  = m_vars[vidx_outl].value;
-        outRight = m_vars[vidx_outr].value;
+        outLeft = *m_out;
+        outRight = *m_out;
     }
     else
     {
-        outLeft  = m_vars[vidx_out].value;
-        outRight = m_vars[vidx_out].value;
+        if (m_lout != 0)
+        {
+            outLeft = *m_lout;
+        }
+        else
+        {
+            outLeft = 0.0f;
+        }
+        if (m_rout != 0)
+        {
+            outRight = *m_rout;
+        }
+        else
+        {
+            outRight = 0.0f;
+        }
     }
 
     //TODO: setup Portaudio non-blocking ring buffers
     // to communicate variables to the GUI thread
+}
+
+void VirtualMachine::dump(std::ostream &s)
+{
+    QMutexLocker lock(&m_controlMutex);
+
+    s << "-- VIRTUAL MACHINE PROGRAM --\n\n";
+    size_t N = m_program.size();
+    for(size_t i=0; i<N; i++)
+    {
+        uint32_t n = m_program[i].icode & 0xFFFF; // variable index)
+        if (m_program[i].icode & 0x80000000)
+        {
+            switch(m_program[i].icode & 0xff000000)
+            {
+            case P_readvar:
+                s << "READ " << m_vars[n].name.c_str() << "\n";
+                break;
+            case P_writevar:
+                s << "WRITE " << m_vars[n].name.c_str() << "\n";
+                break;
+            default:
+                s << "UNKNOWN\n";
+                break;
+            }
+        }
+        else
+        {
+            switch(m_program[i].icode)
+            {
+            case P_add:
+                s << "ADD\n";
+                break;
+            case P_sub:
+                s << "SUB\n";
+                break;
+            case P_mul:
+                s << "MUL\n";
+                break;
+            case P_div:
+                s << "DIV\n";
+                break;
+            case P_literal:
+                s << "LOAD " << m_program[i+1].value << "\n";
+                i++;
+                break;
+            case P_sin:
+                s << "SIN\n";
+                break;
+            case P_cos:
+                s << "COS\n";
+                break;
+            case P_sin1:
+                s << "SIN1\n";
+                break;
+            case P_cos1:
+                s << "COS1\n";
+                break;
+            case P_mod1:
+                s << "MOD1\n";
+                break;
+            case P_abs:
+                s << "ABS\n";
+                break;
+            case P_tan:
+                s << "TAN\n";
+                break;
+            case P_tanh:
+                s << "TANH\n";
+                break;
+            case P_pow:
+                s << "POW\n";
+                break;
+            case P_sqrt:
+                s << "SQRT\n";
+                break;
+            case P_round:
+                s << "ROUND\n";
+                break;
+            case P_limit:
+                s << "LIMIT\n";
+                break;
+            default:
+                s << "UNKNOWN\n";
+                break;
+            }
+        }
+    }
 }

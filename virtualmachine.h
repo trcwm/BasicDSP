@@ -12,6 +12,7 @@
 
 #include <stdint.h>
 #include <vector>
+#include <QMutex>
 #include "qmainwindow.h"
 #include "portaudio.h"
 
@@ -24,8 +25,9 @@
 #define P_sub 2
 #define P_mul 3
 #define P_div 4
+#define P_neg 5
 
-#define P_const 200
+#define P_literal 200
 
 #define P_sin   100
 #define P_cos   101
@@ -38,6 +40,7 @@
 #define P_tan   108
 #define P_tanh  109
 #define P_pow   110
+#define P_limit 111
 
 //#define P_print 102
 
@@ -48,15 +51,26 @@
 #define P_fir      0x83000000
 #define P_biquad   0x84000000
 
-// default variables
-#define vidx_zero 0
-#define vidx_samplerate 1
-#define vidx_inl 2
-#define vidx_inr 3
-#define vidx_in  4
-#define vidx_outl 5
-#define vidx_outr 6
-#define vidx_out  7
+namespace VM
+{
+    union instruction_t
+    {
+        uint32_t icode;
+        float    value;
+    };
+
+    struct variable_t
+    {
+        std::string name;
+        float       value;
+    };
+
+    typedef std::vector<instruction_t> program_t;
+    typedef std::vector<variable_t>    variables_t;
+
+    /** find a variable by name. returns -1 if not found */
+    int32_t findVariableByName(const variables_t &vars, const std::string &name);
+}
 
 /** Virtual machine that executes BasicDSP programs.
     The VM runs in a different thread (due to PortAudio)
@@ -70,7 +84,7 @@ public:
     virtual ~VirtualMachine();
 
     /** load a program consisting of byte code */
-    void loadProgram();
+    void loadProgram(const VM::program_t &program, const VM::variables_t &variables);
 
     /** start the execution of the program */
     bool start();
@@ -86,9 +100,20 @@ public:
     /** get the current VU levels */
     void getVU(float &left, float &right)
     {
+        QMutexLocker locker(&m_controlMutex);
         left = m_leftLevel;
         right = m_rightLevel;
     }
+
+    /** set the value of a slider */
+    void setSlider(uint32_t id, float value);
+
+    /** set the source input */
+    enum src_t {SRC_SOUNDCARD, SRC_NOISE, SRC_SINE, SRC_QUADSINE, SRC_WAV, SRC_IMPULSE};
+    void setSource(src_t source);
+
+    /** dump the (human readable) VM program to an output stream */
+    void dump(std::ostream &s);
 
 protected:
     /** execute the program once */
@@ -110,20 +135,23 @@ protected:
     float       m_leftLevel;
     float       m_rightLevel;
 
-    union instruction_t
-    {
-        uint32_t icode;
-        float    value;
-    };
+    bool        m_runState;
 
-    struct variable_t
-    {
-        std::string name;
-        float       value;
-    };
+    QMutex      m_controlMutex;
 
-    std::vector<instruction_t>   m_program; // array of program operations
-    std::vector<variable_t>      m_vars;    // variables
+    VM::program_t       m_program;
+    VM::variables_t     m_vars;
+
+    src_t   m_source;
+
+    float   *m_lout;
+    float   *m_lin;
+    float   *m_rout;
+    float   *m_rin;
+    float   *m_in;
+    float   *m_out;
+
+    float   *m_slider[4];
 };
 
 #endif

@@ -9,23 +9,25 @@
 
 */
 
+#include "virtualmachine.h"
 #include "tokenizer.h"
 
 Tokenizer::Tokenizer()
 {
     // define the keywords
     // must be lower case!
-    m_keywords.push_back("sin");
-    m_keywords.push_back("cos");
-    m_keywords.push_back("sin1");
-    m_keywords.push_back("cos1");
-    m_keywords.push_back("abs");
-    m_keywords.push_back("abs");
-    m_keywords.push_back("round");
-    m_keywords.push_back("sqrt");
-    m_keywords.push_back("tan");
-    m_keywords.push_back("tanh");
-    m_keywords.push_back("pow");
+    m_functions.push_back(functionInfo_t{"sin",P_sin});
+    m_functions.push_back(functionInfo_t{"cos",P_cos});
+    m_functions.push_back(functionInfo_t{"sin1",P_sin1});
+    m_functions.push_back(functionInfo_t{"cos1",P_cos1});
+    m_functions.push_back(functionInfo_t{"mod1",P_mod1});
+    m_functions.push_back(functionInfo_t{"abs",P_abs});
+    m_functions.push_back(functionInfo_t{"round",P_round});
+    m_functions.push_back(functionInfo_t{"sqrt",P_sqrt});
+    m_functions.push_back(functionInfo_t{"tan",P_tan});
+    m_functions.push_back(functionInfo_t{"tanh",P_tanh});
+    m_functions.push_back(functionInfo_t{"pow",P_pow});
+    m_functions.push_back(functionInfo_t{"limit",P_limit});
 }
 
 bool Tokenizer::isDigit(char c) const
@@ -172,13 +174,15 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
             }
             else if (c == '-')
             {
-                // is it a minus before an integer?
-                // we check this by accepting
-                // the character and peeking at the
-                // next one to see if it is an
-                // numeric character.
+                // This could be the start of a negative
+                // number, or a regular subtraction
+                // For now, we'll interpret it as a
+                // regular subtraction.
 
                 r->accept();
+
+                /* OBSOLETE CODE but keep for future reference
+
                 if (isNumeric(r->peek()))
                 {
                     // it's part of an integer, or float!
@@ -191,10 +195,20 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
                     tok.tokID = TOK_MINUS;  // assume it's a single minus
                     result.push_back(tok);
                 }
+                */
+
+                tok.tokID = TOK_MINUS;
+                result.push_back(tok);
             }
             else if (c == '*')
             {
                 tok.tokID = TOK_STAR;
+                result.push_back(tok);
+                r->accept();
+            }
+            else if (c == '/')
+            {
+                tok.tokID = TOK_SLASH;
                 result.push_back(tok);
                 r->accept();
             }
@@ -239,7 +253,7 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
             else
             {
                 // unknown token!
-                m_lastError = std::string("Uknown token");
+                m_lastError = std::string("Unknown token");
                 return false;
             }
             break;
@@ -266,14 +280,15 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
             {
                 // check if it is a keyword
                 bool found = false;
-                for(size_t i=0; i<m_keywords.size(); i++)
+                for(size_t i=0; i<m_functions.size(); i++)
                 {
-                    if (m_keywords[i] == tok.txt)
+                    if (m_functions[i].name == tok.txt)
                     {
                         // keyword found!
-                        tok.tokID = 100+i;
+                        tok.tokID = m_functions[i].ID;
                         result.push_back(tok);
                         found = true;
+                        continue;
                     }
                 }
                 if (!found)
@@ -386,9 +401,10 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
 }
 
 
+#if 0
 void Tokenizer::dumpTokens(std::ostream &stream, const std::vector<token_t> &tokens)
 {
-#if 0
+
     doLog(LOG_INFO, "Dumping tokens: \n");
 
     // show the tokens
@@ -471,6 +487,6 @@ void Tokenizer::dumpTokens(std::ostream &stream, const std::vector<token_t> &tok
             break;
         }
     }
-#endif
-}
 
+}
+#endif

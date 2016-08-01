@@ -63,6 +63,7 @@ SOURCES += main.cpp\
         tokenizer.cpp\
         reader.cpp\
         logging.cpp\
+        asttovm.cpp\
         mainwindow.cpp
 
 HEADERS  += mainwindow.h\
@@ -72,6 +73,7 @@ HEADERS  += mainwindow.h\
             tokenizer.h\
             reader.h\
             logging.h\
+            asttovm.h\
             virtualmachine.h
 
 FORMS    += mainwindow.ui

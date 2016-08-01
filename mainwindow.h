@@ -22,8 +22,15 @@ public:
 private slots:
     void on_actionExit_triggered();
     void on_GUITimer();
-
+    void on_Slider1Changed(float value);
+    void on_Slider2Changed(float value);
+    void on_Slider3Changed(float value);
+    void on_Slider4Changed(float value);
     void on_runButton_clicked();
+
+    void on_SourceChanged();
+
+    void on_stopButton_clicked();
 
 private:
     Ui::MainWindow *ui;
@@ -38,7 +45,7 @@ private:
     VUMeter *m_rightVUMeter;
     VUMeter *m_leftVUMeter;
 
-    VirtualMachine *machine;
+    VirtualMachine *m_machine;
 };
 
 #endif // MAINWINDOW_H

@@ -29,6 +29,7 @@
 #define TOK_LARGER  8
 #define TOK_SMALLER 9
 #define TOK_EQUAL   10
+#define TOK_SLASH   11
 #define TOK_COMMA   13
 
 #define TOK_INTEGER 30
@@ -66,7 +67,7 @@ public:
     return m_lastError;
   }
 
-  void dumpTokens(std::ostream &stream, const std::vector<token_t> &tokens);
+  //OBSOLETE: void dumpTokens(std::ostream &stream, const std::vector<token_t> &tokens);
 
 protected:
   bool isDigit(char c) const;
@@ -88,8 +89,14 @@ protected:
                     S_COMMENT,
                     S_DONE};
 
-  std::string               m_lastError;
-  std::vector<std::string>  m_keywords;
+  struct functionInfo_t
+  {
+      std::string   name;   // function name
+      uint32_t      ID;     // function ID
+  };
+
+  std::string                   m_lastError;
+  std::vector<functionInfo_t>   m_functions;
 };
 
 
