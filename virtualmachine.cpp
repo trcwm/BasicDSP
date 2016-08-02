@@ -414,17 +414,17 @@ void VirtualMachine::executeProgram(float inLeft, float inRight, float &outLeft,
                 stack[sp-1]=cos(stack[sp-1]);
                 break;
             case P_sin1:
-                stack[sp-1]=sin(2*M_PI*stack[sp-1]);
+                stack[sp-1]=sin(2.0f*M_PI*stack[sp-1]);
                 break;
             case P_cos1:
-                stack[sp-1]=cos(2*M_PI*stack[sp-1]);
+                stack[sp-1]=cos(2.0f*M_PI*stack[sp-1]);
                 break;
             case P_literal:
                 stack[sp++]=m_program[pc].value;
                 pc++;
                 break;
             //case P_print:
-            //    printf("%f\n",stack[--sp]);
+            //  printf("%f\n",stack[--sp]);
             //    break;
             case P_mod1:
                 stack[sp-1]=stack[sp-1]-(int)stack[sp-1];
