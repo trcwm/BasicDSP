@@ -26,12 +26,17 @@ struct varInfo
 };
 
 /** Abstract Syntax Tree Node */
-struct ASTNode
+class ASTNode
 {
+public:
   enum node_t {NodeUnknown, NodeHead,
                NodeStatement,
                NodeAssign,
-               NodeTemp,
+               NodeExpr,
+               NodeExprAccent,
+               NodeTerm,
+               NodeTermAccent,
+               NodeFactor,
                NodeAdd,
                NodeSub,
                NodeMul,
@@ -49,6 +54,14 @@ struct ASTNode
         right       = 0;
         type        = nodeType;
         functionID  = 0xFFFFFFFF;
+    }
+
+    ~ASTNode()
+    {
+        if (left != 0)
+            delete left;
+        if (right != 0)
+            delete right;
     }
 
     void dump(std::ostream &stream, uint32_t level = 0)
@@ -114,13 +127,11 @@ struct ASTNode
     varInfo         info;       // variable related information
     uint32_t        functionID; // function ID
 
-    std::shared_ptr<ASTNode>  left;
-    std::shared_ptr<ASTNode>  right;
+    ASTNode  *left;
+    ASTNode  *right;
 };
 
-typedef std::shared_ptr<ASTNode> ASTNodePtr;
-
-typedef std::vector<ASTNodePtr> statements_t;
+typedef std::vector<ASTNode*> statements_t;
 
 /** Parser to translate token stream from tokenizer/lexer to operation stack. */
 class Parser
@@ -165,21 +176,55 @@ protected:
     */
 
     bool acceptProgram(state_t &s, statements_t &result);
-    bool acceptDefinition(state_t &s, ASTNodePtr newNode);
+    ASTNode* acceptDefinition(state_t &s);
 
-    bool acceptAssignment(state_t &s, ASTNodePtr newNode);
-    bool acceptExpr(state_t &s, ASTNodePtr newNode);
-    bool acceptExpr1(state_t &s, ASTNodePtr newNode);
-    bool acceptExpr2(state_t &s, ASTNodePtr newNode);
+    /** production: assignment -> IDENT = expr */
+    ASTNode* acceptAssignment(state_t &s);
 
-    bool acceptTerm(state_t &s, ASTNodePtr newNode);
-    bool acceptTerm1(state_t &s, ASTNodePtr newNode);
-    bool acceptTerm2(state_t &s, ASTNodePtr newNode);
-    bool acceptTerm3(state_t &s, ASTNodePtr newNode);
+    /** production: expr -> term expr' */
+    ASTNode* acceptExpr(state_t &s);
 
-    bool acceptFactor(state_t &s, ASTNodePtr newNode);
-    bool acceptFactor1(state_t &s, ASTNodePtr newNode);
-    bool acceptFactor2(state_t &s, ASTNodePtr newNode);
+    /** production: expr' -> - term expr' | + term expr' | e
+
+        This function will return leftNode when an
+        epsilon production is invoked. Therfore,
+        it will never return NULL.
+    */
+    ASTNode* acceptExprAccent(state_t &s, ASTNode *leftNode);
+
+    /** production: expr' -> - term expr' */
+    ASTNode* acceptExprAccent1(state_t &s, ASTNode *leftNode);
+
+    /** production: expr' -> + term expr' */
+    ASTNode* acceptExprAccent2(state_t &s, ASTNode *leftNode);
+
+    /** production: term -> factor term' */
+    ASTNode* acceptTerm(state_t &s);
+
+    /** production: term' -> * factor term' | / factor term' | e
+
+        This function will return leftNode when an
+        epsilon production is invoked. Therfore,
+        it will never return NULL.
+    */
+    ASTNode* acceptTermAccent(state_t &s, ASTNode *leftNode);
+
+    /** production: term' -> * factor term' */
+    ASTNode* acceptTermAccent1(state_t &s, ASTNode *leftNode);
+
+    /** production: term' -> / factor term' */
+    ASTNode* acceptTermAccent2(state_t &s, ASTNode *leftNode);
+
+    ASTNode* acceptFactor(state_t &s);
+
+    /** production: FUNCTION ( expr ) */
+    ASTNode* acceptFactor1(state_t &s);
+
+    /** production: ( expr ) */
+    ASTNode* acceptFactor2(state_t &s);
+
+    /** production: - factor */
+    ASTNode* acceptFactor3(state_t &s);
 
     /** match a token, return true if matched and advance the token index. */
     bool match(state_t &s, uint32_t tokenID);

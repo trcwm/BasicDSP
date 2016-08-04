@@ -27,10 +27,13 @@ bool ASTToVM::process(const statements_t &s,
     return true;
 }
 
-bool ASTToVM::convertNode(const ASTNodePtr node,
+bool ASTToVM::convertNode(ASTNode *node,
                           VM::program_t &program,
                           VM::variables_t &variables)
 {
+    if (node == 0)
+        return true;
+
     if (node->left != 0)
     {
         convertNode(node->left, program, variables);
