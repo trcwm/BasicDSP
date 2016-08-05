@@ -7,9 +7,17 @@ ScopeWindow::ScopeWindow(QWidget *parent) :
 {
     setWindowFlags(Qt::WindowStaysOnTopHint | Qt::Tool);
     ui->setupUi(this);
+
+    m_scope = new ScopeWidget(this);
+    ui->mainLayout->addWidget(m_scope);
 }
 
 ScopeWindow::~ScopeWindow()
 {
     delete ui;
+}
+
+void ScopeWindow::submit256Samples(float *buffer)
+{
+    m_scope->submit256Samples(buffer);
 }

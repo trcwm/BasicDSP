@@ -315,8 +315,8 @@ void VirtualMachine::processSamples(float *inbuf, float *outbuf,
             right = 0.0f;
             break;
         case SRC_NOISE:
-            left = static_cast<float>(rand())/RAND_MAX;
-            right = static_cast<float>(rand())/RAND_MAX;
+            left = -1.0f+2.0f*static_cast<float>(rand())/RAND_MAX;
+            right = -1.0f+2.0f*static_cast<float>(rand())/RAND_MAX;
             break;
         case SRC_SINE:
             left = 0.0f;

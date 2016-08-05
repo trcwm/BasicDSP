@@ -1,7 +1,10 @@
 /*
 
   Spectrum display widget
-  Niels A. Moseley 2016
+
+  Copyright 2006-2016
+  Niels A. Moseley
+  Pieter-Tjerk de Boer
 
   License: GPLv2
 

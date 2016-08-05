@@ -24,8 +24,8 @@ SOURCES +=  contrib/portaudio/src/common/pa_allocation.c \
             contrib/portaudio/src/common/pa_process.c \
             contrib/portaudio/src/common/pa_ringbuffer.c \
             contrib/portaudio/src/common/pa_stream.c \
-            contrib/portaudio/src/common/pa_trace.c \
-    scopewindow.cpp
+            contrib/portaudio/src/common/pa_trace.c
+
 win32 {
     DEFINES += PA_USE_WMME
     DEFINES += PA_USE_WASAPI

@@ -7,6 +7,7 @@
 #include "asttovm.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "pa_ringbuffer.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -81,6 +82,18 @@ void MainWindow::on_GUITimer()
     m_rightVUMeter->setLevel(R);
     m_leftVUMeter->update();
     m_rightVUMeter->update();
+
+    PaUtilRingBuffer* rbPtr = m_machine->getRingBufferPtr(0);
+
+    ring_buffer_size_t items = PaUtil_GetRingBufferReadAvailable(rbPtr);
+    while (items >= 256)
+    {
+        float data[256];
+        PaUtil_ReadRingBuffer(rbPtr, data, 256);
+        m_scope->submit256Samples(data);
+        items = PaUtil_GetRingBufferReadAvailable(rbPtr);
+    }
+    m_scope->update();
 }
 
 void MainWindow::on_actionExit_triggered()

@@ -1,3 +1,15 @@
+/*
+
+  Spectrum display window
+
+  Copyright 2006-2016
+  Niels A. Moseley
+  Pieter-Tjerk de Boer
+
+  License: GPLv2
+
+*/
+
 #include "spectrumwindow.h"
 #include "ui_spectrumwindow.h"
 
