@@ -6,6 +6,8 @@
 #include "virtualmachine.h"
 #include "namedslider.h"
 #include "vumeter.h"
+#include "spectrumwindow.h"
+#include "scopewindow.h"
 
 namespace Ui {
 class MainWindow;
@@ -46,6 +48,9 @@ private:
     VUMeter *m_leftVUMeter;
 
     VirtualMachine *m_machine;
+
+    SpectrumWindow *m_spectrum;
+    ScopeWindow    *m_scope;
 };
 
 #endif // MAINWINDOW_H

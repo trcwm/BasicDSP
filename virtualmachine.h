@@ -1,7 +1,10 @@
 /*
 
   Virtual machine for running basic DSP programs
-  Niels A. Moseley 2016
+
+  Copyright 2006-2016
+  Niels A. Moseley
+  Pieter-Tjerk de Boer
 
   License: GPLv2
 
@@ -15,6 +18,7 @@
 #include <QMutex>
 #include "qmainwindow.h"
 #include "portaudio.h"
+#include "pa_ringbuffer.h"
 
 #ifndef M_PI
 #define M_PI 3.1415927
@@ -115,7 +119,14 @@ public:
     /** dump the (human readable) VM program to an output stream */
     void dump(std::ostream &s);
 
+    /** get a pointer to one of the four ring buffers
+        to allow the reading of data by the GUI thread */
+    PaUtilRingBuffer* getRingBufferPtr(uint32_t i);
+
 protected:
+    /** initialize internal pointers */
+    void init();
+
     /** execute the program once */
     void executeProgram(float inLeft, float inRight, float &outLeft, float &outRight);
 
@@ -131,27 +142,36 @@ protected:
 
     QMainWindow *m_guiWindow;
     PaStream    *m_stream;
-    double      m_sampleRate;
-    float       m_leftLevel;
-    float       m_rightLevel;
+    double      m_sampleRate;   // the current sample rate in Hz
+    float       m_leftLevel;    // the left channel VU level
+    float       m_rightLevel;   // the right channel VU level
 
-    bool        m_runState;
+    bool        m_runState;     // true if VM is running a program
 
-    QMutex      m_controlMutex;
+    QMutex      m_controlMutex; // mutex to synchronize GUI and VM threads
 
-    VM::program_t       m_program;
-    VM::variables_t     m_vars;
+    VM::program_t   m_program;  // VM byte code
+    VM::variables_t m_vars;     // VM program variables
 
-    src_t   m_source;
+    src_t   m_source;           // selected input source
 
-    float   *m_lout;
-    float   *m_lin;
-    float   *m_rout;
-    float   *m_rin;
-    float   *m_in;
-    float   *m_out;
+    // the following pointers are variables in
+    // m_vars, or NULL if the variable does not exist
+    // in the current VM program
+    float   *m_lout;            // pointer to left OUT variable
+    float   *m_lin;             // pointer to left IN variable
+    float   *m_rout;            // pointer to right OUT variable
+    float   *m_rin;             // pointer to right IN variable
+    float   *m_in;              // pointer to mono IN variable
+    float   *m_out;             // pointer to mono OUT variable
+    float   *m_slider[4];       // pointers to slider variables
 
-    float   *m_slider[4];
+    // variables to send to spectrum & scope displays
+    // can be NULL if nothing is selected
+    float   *m_monitorVar[4];
+
+    // thread-safe ring buffers for GUI I/O
+    PaUtilRingBuffer m_ringbuffer[4];
 };
 
 #endif

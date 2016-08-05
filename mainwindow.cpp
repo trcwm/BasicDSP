@@ -55,6 +55,13 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(m_guiTimer, SIGNAL(timeout()), this, SLOT(on_GUITimer()));
     m_guiTimer->start(100);
 
+    /** create a spectrum window */
+    m_spectrum = new SpectrumWindow(this);
+    m_spectrum->show();
+
+    /** create a scope window */
+    m_scope = new ScopeWindow(this);
+    m_scope->show();
 }
 
 MainWindow::~MainWindow()
@@ -63,6 +70,7 @@ MainWindow::~MainWindow()
         m_machine->stop();
 
     delete ui;
+    delete m_spectrum;
 }
 
 void MainWindow::on_GUITimer()

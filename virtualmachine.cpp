@@ -1,8 +1,10 @@
 /*
 
   Virtual machine for running basic DSP programs
-  Niels A. Moseley 2008-2016
-  Pieter-Tjerk de Boer 2008-2016
+
+  Copyright 2006-2016
+  Niels A. Moseley
+  Pieter-Tjerk de Boer
 
   License: GPLv2
 
@@ -79,6 +81,41 @@ VirtualMachine::VirtualMachine(QMainWindow *guiWindow)
         }
     }
 
+    /* Allocate ring buffers for GUI I/O.
+
+       The ring buffers are 16384 floats,
+       which is approx 750ms of data at
+       44100. The GUI thread must retrieve
+       the data within this time.
+
+       The number of float must be a power
+       of two!
+    */
+    for(uint32_t i=0; i<4; i++)
+    {
+        void *dataptr = new float[32768];
+        PaUtil_InitializeRingBuffer(&m_ringbuffer[i], sizeof(float),
+                                    32768, dataptr);
+    }
+
+    init();
+
+    m_source = SRC_SOUNDCARD;
+}
+
+VirtualMachine::~VirtualMachine()
+{
+    Pa_Terminate();
+
+    // de-allocate the ring buffer data
+    for(uint32_t i=0; i<4; i++)
+    {
+        delete m_ringbuffer[i].buffer;
+    }
+}
+
+void VirtualMachine::init()
+{
     m_lout = 0;
     m_lin  = 0;
     m_rout = 0;
@@ -93,28 +130,27 @@ VirtualMachine::VirtualMachine(QMainWindow *guiWindow)
     m_leftLevel = 0.0f;
     m_rightLevel = 0.0f;
 
-    m_source = SRC_SOUNDCARD;
+    // flush the data in the ring buffers
+    for(uint32_t i=0; i<4; i++)
+    {
+        PaUtil_FlushRingBuffer(&m_ringbuffer[i]);
+    }
 }
 
-VirtualMachine::~VirtualMachine()
+PaUtilRingBuffer* VirtualMachine::getRingBufferPtr(uint32_t idx)
 {
-    Pa_Terminate();
+    if (idx<4)
+    {
+        return &m_ringbuffer[idx];
+    }
+    return NULL;
 }
 
 void VirtualMachine::loadProgram(const VM::program_t &program, const VM::variables_t &variables)
 {
     QMutexLocker lock(&m_controlMutex);
 
-    m_lout = 0;
-    m_lin  = 0;
-    m_rout = 0;
-    m_rin  = 0;
-    m_in   = 0;
-    m_out  = 0;
-    m_slider[0] = 0;
-    m_slider[1] = 0;
-    m_slider[2] = 0;
-    m_slider[3] = 0;
+    init();
 
     m_vars = variables;
     m_program = program;
@@ -307,6 +343,12 @@ void VirtualMachine::processSamples(float *inbuf, float *outbuf,
             m_rightLevel = right_abs;
         }
         executeProgram(left, right, outbuf[i<<1], outbuf[(i<<1)+1]);
+
+        // for now, write the Lout and Rout to the first two ring buffers
+        // FIXME: don't call this per sample but do it in chunks to reduce
+        // the overhead.
+        PaUtil_WriteRingBuffer(&m_ringbuffer[0], &outbuf[i<<1], 1);
+        PaUtil_WriteRingBuffer(&m_ringbuffer[1], &outbuf[(i<<1)+1], 1);
     }
     m_controlMutex.unlock();
 }

@@ -24,7 +24,8 @@ SOURCES +=  contrib/portaudio/src/common/pa_allocation.c \
             contrib/portaudio/src/common/pa_process.c \
             contrib/portaudio/src/common/pa_ringbuffer.c \
             contrib/portaudio/src/common/pa_stream.c \
-            contrib/portaudio/src/common/pa_trace.c
+            contrib/portaudio/src/common/pa_trace.c \
+    scopewindow.cpp
 win32 {
     DEFINES += PA_USE_WMME
     DEFINES += PA_USE_WASAPI
@@ -64,6 +65,10 @@ SOURCES += main.cpp\
         reader.cpp\
         logging.cpp\
         asttovm.cpp\
+        spectrumwidget.cpp\
+        spectrumwindow.cpp\
+        scopewindow.cpp\
+        scopewidget.cpp\
         mainwindow.cpp
 
 HEADERS  += mainwindow.h\
@@ -74,6 +79,12 @@ HEADERS  += mainwindow.h\
             reader.h\
             logging.h\
             asttovm.h\
-            virtualmachine.h
+            spectrumwidget.h\
+            spectrumwindow.h\
+            virtualmachine.h \
+            scopewindow.h\
+            scopewidget.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    spectrumwindow.ui \
+    scopewindow.ui
