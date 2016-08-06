@@ -34,7 +34,8 @@ protected:
     int32_t db2pix(float db);
     int32_t x2pix(float xvalue);
 
-    std::vector<VirtualMachine::ring_buffer_data_t>  m_signal;
+    std::vector<float> m_dbData;
+    //std::vector<VirtualMachine::ring_buffer_data_t>  m_signal;
 
     float m_dbmin,m_dbmax;
     float m_fmin,m_fmax;

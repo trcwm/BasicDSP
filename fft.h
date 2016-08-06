@@ -12,6 +12,7 @@
 #ifndef fft_h
 #define fft_h
 
+#include <vector>
 #include "virtualmachine.h"
 #include "kiss_fft.h"
 
@@ -26,6 +27,8 @@ public:
                  VirtualMachine::ring_buffer_data_t *outbuffer);
 
 protected:
+    std::vector<VirtualMachine::ring_buffer_data_t> m_data;
+    std::vector<float> m_window;
     kiss_fft_cfg m_config;
 };
 

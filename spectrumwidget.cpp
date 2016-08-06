@@ -26,15 +26,16 @@ SpectrumWidget::SpectrumWidget(QWidget *parent)
     const QFont smallFont = QFontDatabase::systemFont(QFontDatabase::SmallestReadableFont);
     setFont(smallFont);
 
-    m_signal.resize(256);
+    m_dbData.resize(256);
 }
 
 void SpectrumWidget::submit256Samples(const VirtualMachine::ring_buffer_data_t *samples)
 {
-    memcpy(&m_signal[0], samples, sizeof(VirtualMachine::ring_buffer_data_t)*256);
-
-    // do the FFT of the samples
-
+    for(uint32_t i=0; i<256; i++)
+    {
+        // add 1e-20f to stop log10 from producing NaNs.
+        m_dbData[i] = 10.0f*log10(samples[i].s1*samples[i].s1 + samples[i].s2*samples[i].s2+1e-20f);
+    }
 }
 
 void SpectrumWidget::paintEvent(QPaintEvent *event)
@@ -128,12 +129,12 @@ void SpectrumWidget::paintEvent(QPaintEvent *event)
     painter.drawImage(rect(), *m_bkbuffer);
     painter.setPen(Qt::yellow);
 
-    float mag = 10.0f*log10(m_signal[0].s1*m_signal[0].s1 + m_signal[0].s2*m_signal[0].s2);
-    int32_t ypos_old = db2pix(mag);
+
+    int32_t ypos_old = db2pix(m_dbData[0]);
     int32_t xpos_old = 0;
     for(uint32_t i=1; i<256; i++)
     {
-        int32_t ypos = db2pix(10.0f*log10(m_signal[i].s1*m_signal[i].s1 + m_signal[i].s2*m_signal[i].s2));
+        int32_t ypos = db2pix(m_dbData[i]);
         int32_t xpos = x2pix(i);
         painter.drawLine(xpos_old, ypos_old, xpos, ypos);
         xpos_old = xpos;

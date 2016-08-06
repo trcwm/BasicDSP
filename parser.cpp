@@ -387,7 +387,7 @@ ASTNode* Parser::acceptTermAccent2(state_t &s, ASTNode* leftNode)
     // supply the new head node to the next
     // acceptTermAccent function
 
-    ASTNode *operationNode = new ASTNode(ASTNode::NodeMul);
+    ASTNode *operationNode = new ASTNode(ASTNode::NodeDiv);
     operationNode->left = leftNode;
     operationNode->right = rightNode;
 
