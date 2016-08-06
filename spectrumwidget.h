@@ -25,12 +25,14 @@ class SpectrumWidget : public QWidget
 public:
     SpectrumWidget(QWidget *parent);
 
-    void submit256Samples(VirtualMachine::ring_buffer_data_t *samples);
+    /** submit 256 FFT'd samples */
+    void submit256Samples(const VirtualMachine::ring_buffer_data_t *samples);
 
 protected:
     void paintEvent(QPaintEvent *event);
 
     int32_t db2pix(float db);
+    int32_t x2pix(float xvalue);
 
     std::vector<VirtualMachine::ring_buffer_data_t>  m_signal;
 

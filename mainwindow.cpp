@@ -126,6 +126,12 @@ void MainWindow::on_GUITimer()
     m_leftVUMeter->update();
     m_rightVUMeter->update();
 
+    // read data streams from virtual machine
+    // and process/send to the scope and/or spectrum displays
+
+    // **********************************************************************
+    // Scope
+    // **********************************************************************
     PaUtilRingBuffer* rbPtr = m_machine->getRingBufferPtr(0);
 
     ring_buffer_size_t items = PaUtil_GetRingBufferReadAvailable(rbPtr);
@@ -133,10 +139,30 @@ void MainWindow::on_GUITimer()
     {
         VirtualMachine::ring_buffer_data_t data[256];
         PaUtil_ReadRingBuffer(rbPtr, data, 256);
-        m_scope->submit256Samples(data);
+        if (!m_scope->isHidden())
+            m_scope->submit256Samples(data);
         items = PaUtil_GetRingBufferReadAvailable(rbPtr);
     }
     m_scope->update();
+
+    // **********************************************************************
+    // Spectrum
+    // **********************************************************************
+    rbPtr = m_machine->getRingBufferPtr(1);
+    items = PaUtil_GetRingBufferReadAvailable(rbPtr);
+    while (items >= 256)
+    {
+        VirtualMachine::ring_buffer_data_t data[256];
+        PaUtil_ReadRingBuffer(rbPtr, data, 256);
+        if (!m_spectrum->isHidden())
+        {
+            VirtualMachine::ring_buffer_data_t spec[256];
+            m_fft.process256(data, spec);
+            m_spectrum->submit256Samples(spec);
+        }
+        items = PaUtil_GetRingBufferReadAvailable(rbPtr);
+    }
+    m_spectrum->update();
 }
 
 void MainWindow::on_actionExit_triggered()
@@ -333,4 +359,12 @@ void MainWindow::on_actionFont_triggered()
         ui->sourceEditor->setFont(dialog->selectedFont());
     }
     delete dialog;
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    if (m_spectrum->isHidden())
+        m_spectrum->show();
+    else
+        m_spectrum->hide();
 }

@@ -29,7 +29,8 @@ public:
     explicit SpectrumWindow(QWidget *parent = 0);
     ~SpectrumWindow();
 
-    void submit256Samples(VirtualMachine::ring_buffer_data_t *samples);
+    /** submit 256 FFT'd samples */
+    void submit256Samples(const VirtualMachine::ring_buffer_data_t *samples);
 
 private:
     Ui::SpectrumWindow *ui;

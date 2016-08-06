@@ -10,7 +10,7 @@
 #include "vumeter.h"
 #include "spectrumwindow.h"
 #include "scopewindow.h"
-
+#include "fft.h"
 
 namespace Ui {
 class MainWindow;
@@ -39,6 +39,8 @@ private slots:
 
     void on_actionFont_triggered();
 
+    void on_pushButton_clicked();
+
 private:
     void readSettings();
     void writeSettings();
@@ -59,6 +61,8 @@ private:
 
     SpectrumWindow *m_spectrum;
     ScopeWindow    *m_scope;
+
+    fft             m_fft;
 
     QSettings m_settings;
 };

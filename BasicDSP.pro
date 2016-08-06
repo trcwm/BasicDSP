@@ -11,7 +11,11 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = BasicDSP
 TEMPLATE = app
 
+
+################################################################################
 # Portaudio stuff
+################################################################################
+
 INCLUDEPATH += contrib/portaudio/include \
                contrib/portaudio/src/common
 
@@ -24,9 +28,9 @@ SOURCES +=  contrib/portaudio/src/common/pa_allocation.c \
             contrib/portaudio/src/common/pa_process.c \
             contrib/portaudio/src/common/pa_ringbuffer.c \
             contrib/portaudio/src/common/pa_stream.c \
-            contrib/portaudio/src/common/pa_trace.c \
-    soundcarddialog.cpp
+            contrib/portaudio/src/common/pa_trace.c
 
+## Windows specific stuff
 win32 {
     DEFINES += PA_USE_WMME
     DEFINES += PA_USE_WASAPI
@@ -52,8 +56,19 @@ win32 {
     LIBS += winmm.lib dsound.lib user32.lib Advapi32.lib
 }
 
+## Todo: linux specific stuff, OSX specific stuff
 
+################################################################################
+# Kiss FFT stuff
+################################################################################
+
+SOURCES += contrib/kiss_fft130/kiss_fft.c
+HEADERS += contrib/kiss_fft130/kiss_fft.h
+INCLUDEPATH += contrib/kiss_fft130
+
+################################################################################
 # Main Basic DSP sources
+################################################################################
 
 RC_FILE = resources/basicdsp.rc
 
@@ -66,11 +81,13 @@ SOURCES += main.cpp\
         reader.cpp\
         logging.cpp\
         asttovm.cpp\
+        fft.cpp\
         spectrumwidget.cpp\
         spectrumwindow.cpp\
         scopewindow.cpp\
         scopewidget.cpp\
-        mainwindow.cpp
+        mainwindow.cpp\
+        soundcarddialog.cpp
 
 HEADERS  += mainwindow.h\
             vumeter.h\
@@ -80,12 +97,13 @@ HEADERS  += mainwindow.h\
             reader.h\
             logging.h\
             asttovm.h\
+            fft.h\
             spectrumwidget.h\
             spectrumwindow.h\
             virtualmachine.h \
             scopewindow.h\
             scopewidget.h \
-    soundcarddialog.h
+            soundcarddialog.h
 
 FORMS    += mainwindow.ui \
     spectrumwindow.ui \

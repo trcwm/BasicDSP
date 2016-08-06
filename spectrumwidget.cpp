@@ -25,9 +25,11 @@ SpectrumWidget::SpectrumWidget(QWidget *parent)
 
     const QFont smallFont = QFontDatabase::systemFont(QFontDatabase::SmallestReadableFont);
     setFont(smallFont);
+
+    m_signal.resize(256);
 }
 
-void SpectrumWidget::submit256Samples(VirtualMachine::ring_buffer_data_t *samples)
+void SpectrumWidget::submit256Samples(const VirtualMachine::ring_buffer_data_t *samples)
 {
     memcpy(&m_signal[0], samples, sizeof(VirtualMachine::ring_buffer_data_t)*256);
 
@@ -124,9 +126,27 @@ void SpectrumWidget::paintEvent(QPaintEvent *event)
     }
     QPainter painter(this);
     painter.drawImage(rect(), *m_bkbuffer);
+    painter.setPen(Qt::yellow);
+
+    float mag = 10.0f*log10(m_signal[0].s1*m_signal[0].s1 + m_signal[0].s2*m_signal[0].s2);
+    int32_t ypos_old = db2pix(mag);
+    int32_t xpos_old = 0;
+    for(uint32_t i=1; i<256; i++)
+    {
+        int32_t ypos = db2pix(10.0f*log10(m_signal[i].s1*m_signal[i].s1 + m_signal[i].s2*m_signal[i].s2));
+        int32_t xpos = x2pix(i);
+        painter.drawLine(xpos_old, ypos_old, xpos, ypos);
+        xpos_old = xpos;
+        ypos_old = ypos;
+    }
 }
 
 int32_t SpectrumWidget::db2pix(float db)
 {
    return static_cast<int32_t>((m_dbmax - db) / (m_dbmax-m_dbmin) * height());
+}
+
+int32_t SpectrumWidget::x2pix(float xvalue)
+{
+    return static_cast<int32_t>(xvalue/256.0f*width());
 }
