@@ -17,6 +17,7 @@
 #include <vector>
 #include <QWidget>
 #include <QImage>
+#include "virtualmachine.h"
 
 class ScopeWidget : public QWidget
 {
@@ -24,16 +25,15 @@ class ScopeWidget : public QWidget
 public:
     ScopeWidget(QWidget *parent);
 
-    void submit256Samples(float *buffer);
+    void submit256Samples(VirtualMachine::ring_buffer_data_t *buffer);
 
 protected:
     void paintEvent(QPaintEvent *event);
 
     int32_t y2pix(float yvalue);
+    int32_t x2pix(float xvalue);
 
-    std::vector<float>  m_signal;
-    std::vector<float>  m_sbuffer;
-    uint32_t            m_sbufferIdx;
+    std::vector<VirtualMachine::ring_buffer_data_t>  m_signal;
 
     float m_timespan;
     float m_ymin,m_ymax;

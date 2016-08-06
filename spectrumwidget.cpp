@@ -27,6 +27,13 @@ SpectrumWidget::SpectrumWidget(QWidget *parent)
     setFont(smallFont);
 }
 
+void SpectrumWidget::submit256Samples(VirtualMachine::ring_buffer_data_t *samples)
+{
+    memcpy(&m_signal[0], samples, sizeof(VirtualMachine::ring_buffer_data_t)*256);
+
+    // do the FFT of the samples
+
+}
 
 void SpectrumWidget::paintEvent(QPaintEvent *event)
 {

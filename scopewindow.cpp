@@ -17,7 +17,7 @@ ScopeWindow::~ScopeWindow()
     delete ui;
 }
 
-void ScopeWindow::submit256Samples(float *buffer)
+void ScopeWindow::submit256Samples(VirtualMachine::ring_buffer_data_t *buffer)
 {
     m_scope->submit256Samples(buffer);
 }

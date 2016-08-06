@@ -28,3 +28,8 @@ SpectrumWindow::~SpectrumWindow()
 {
     delete ui;
 }
+
+void SpectrumWindow::submit256Samples(VirtualMachine::ring_buffer_data_t *samples)
+{
+    m_spectrum->submit256Samples(samples);
+}

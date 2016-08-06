@@ -24,7 +24,8 @@ SOURCES +=  contrib/portaudio/src/common/pa_allocation.c \
             contrib/portaudio/src/common/pa_process.c \
             contrib/portaudio/src/common/pa_ringbuffer.c \
             contrib/portaudio/src/common/pa_stream.c \
-            contrib/portaudio/src/common/pa_trace.c
+            contrib/portaudio/src/common/pa_trace.c \
+    soundcarddialog.cpp
 
 win32 {
     DEFINES += PA_USE_WMME
@@ -83,8 +84,10 @@ HEADERS  += mainwindow.h\
             spectrumwindow.h\
             virtualmachine.h \
             scopewindow.h\
-            scopewidget.h
+            scopewidget.h \
+    soundcarddialog.h
 
 FORMS    += mainwindow.ui \
     spectrumwindow.ui \
-    scopewindow.ui
+    scopewindow.ui \
+    soundcarddialog.ui

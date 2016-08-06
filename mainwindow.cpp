@@ -1,5 +1,7 @@
 #include <QCoreApplication>
 #include <QDebug>
+#include <QFontDialog>
+
 #include <sstream>
 #include "reader.h"
 #include "tokenizer.h"
@@ -8,10 +10,12 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "pa_ringbuffer.h"
+#include "soundcarddialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    m_settings("MoseleyInstruments","BasicDSP")
 {
     ui->setupUi(this);
 
@@ -58,11 +62,14 @@ MainWindow::MainWindow(QWidget *parent) :
 
     /** create a spectrum window */
     m_spectrum = new SpectrumWindow(this);
-    m_spectrum->show();
+    //m_spectrum->show();
 
     /** create a scope window */
     m_scope = new ScopeWindow(this);
-    m_scope->show();
+    //m_scope->show();
+
+    /** get the progam setting */
+    readSettings();
 }
 
 MainWindow::~MainWindow()
@@ -70,9 +77,45 @@ MainWindow::~MainWindow()
     if (m_machine != 0)
         m_machine->stop();
 
+    writeSettings();
+
     delete ui;
     delete m_spectrum;
 }
+
+void MainWindow::readSettings()
+{
+    QString inputDeviceName = m_settings.value("soundcard/input","").toString();
+    QString outputDeviceName = m_settings.value("soundcard/output","").toString();
+    float samplerate = m_settings.value("soundcard/samplerate", 44100.0f).toFloat();
+
+    PaDeviceIndex inDevice = m_machine->getDeviceIndexByName(inputDeviceName, true);
+    PaDeviceIndex outDevice = m_machine->getDeviceIndexByName(outputDeviceName, false);
+    m_machine->setupSoundcard(inDevice, outDevice, samplerate);
+
+    qDebug() << "Loading settings.. ";
+    qDebug() << "input device : " << inputDeviceName;
+    qDebug() << "output device: " << outputDeviceName;
+    qDebug() << "sample rate  : " << samplerate;
+
+    QVariant sizeVariant = m_settings.value("mainwindow/size");
+    if (!sizeVariant.isNull())
+    {
+        resize(sizeVariant.toSize());
+    }
+}
+
+void MainWindow::writeSettings()
+{
+    QString inputDevice = m_machine->getDeviceName(m_machine->getInputDevice());
+    QString outputDevice = m_machine->getDeviceName(m_machine->getOutputDevice());
+    m_settings.setValue("soundcard/input",inputDevice);
+    m_settings.setValue("soundcard/output",outputDevice);
+    m_settings.setValue("soundcard/samplerate", m_machine->getSamplerate());
+
+    m_settings.setValue("mainwindow/size", size());
+}
+
 
 void MainWindow::on_GUITimer()
 {
@@ -88,7 +131,7 @@ void MainWindow::on_GUITimer()
     ring_buffer_size_t items = PaUtil_GetRingBufferReadAvailable(rbPtr);
     while (items >= 256)
     {
-        float data[256];
+        VirtualMachine::ring_buffer_data_t data[256];
         PaUtil_ReadRingBuffer(rbPtr, data, 256);
         m_scope->submit256Samples(data);
         items = PaUtil_GetRingBufferReadAvailable(rbPtr);
@@ -105,6 +148,13 @@ void MainWindow::on_actionExit_triggered()
 
 void MainWindow::on_runButton_clicked()
 {
+    if (m_machine->isRunning())
+    {
+        ui->runButton->setText("Run");
+        m_machine->stop();
+        return;
+    }
+
     Parser    parser;
     Tokenizer tokenizer;
 
@@ -188,6 +238,7 @@ void MainWindow::on_runButton_clicked()
             {
                 qDebug() << vars[i].name.c_str();
             }
+            ui->runButton->setText("Stop");
         }
     }
 }
@@ -243,10 +294,43 @@ void MainWindow::on_SourceChanged()
         m_machine->setSource(VirtualMachine::SRC_SOUNDCARD);
 }
 
-void MainWindow::on_stopButton_clicked()
+void MainWindow::on_actionSoundcard_triggered()
 {
-    if (m_machine!=0)
+    // open sound setup dialog
+    SoundcardDialog *dialog = new SoundcardDialog(this);
+
+    // fill dialog with info
+    dialog->setSamplerate(m_machine->getSamplerate());
+    dialog->setInputSource(m_machine->getInputDevice());
+    dialog->setOutputSource(m_machine->getOutputDevice());
+
+    if (dialog->exec() == 1)
     {
-        m_machine->stop();
+        m_machine->setupSoundcard(dialog->getInputSource(),
+                                  dialog->getOutputSource(),
+                                  dialog->getSamplerate());
     }
+    delete dialog;
+}
+
+
+
+void MainWindow::on_scopeButton_clicked()
+{
+    if (m_scope->isHidden())
+        m_scope->show();
+    else
+        m_scope->hide();
+}
+
+void MainWindow::on_actionFont_triggered()
+{
+    QFontDialog *dialog = new QFontDialog(this);
+    dialog->setCurrentFont(ui->sourceEditor->font());
+    int result = dialog->exec();
+    if (result == 1)
+    {
+        ui->sourceEditor->setFont(dialog->selectedFont());
+    }
+    delete dialog;
 }

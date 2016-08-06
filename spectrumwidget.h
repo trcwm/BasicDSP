@@ -17,6 +17,7 @@
 #include <vector>
 #include <QWidget>
 #include <QImage>
+#include "virtualmachine.h"
 
 class SpectrumWidget : public QWidget
 {
@@ -24,13 +25,14 @@ class SpectrumWidget : public QWidget
 public:
     SpectrumWidget(QWidget *parent);
 
+    void submit256Samples(VirtualMachine::ring_buffer_data_t *samples);
+
 protected:
     void paintEvent(QPaintEvent *event);
 
     int32_t db2pix(float db);
 
-    std::vector<float>  m_sig1;
-    std::vector<float>  m_sig2;
+    std::vector<VirtualMachine::ring_buffer_data_t>  m_signal;
 
     float m_dbmin,m_dbmax;
     float m_fmin,m_fmax;

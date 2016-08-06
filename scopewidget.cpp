@@ -22,20 +22,21 @@ ScopeWidget::ScopeWidget(QWidget *parent)
     m_timespan = 100.0e-3f;
 
     m_signal.resize(256);
-    m_sbuffer.resize(256);
-    m_sbufferIdx = 0;
-
-    //memset(&m_signal[0], 0, sizeof(float)*m_signal.size());
 }
 
-void ScopeWidget::submit256Samples(float *buffer)
+void ScopeWidget::submit256Samples(VirtualMachine::ring_buffer_data_t *buffer)
 {
-    memcpy(&m_signal[0], buffer, sizeof(float)*256);
+    memcpy(&m_signal[0], buffer, sizeof(VirtualMachine::ring_buffer_data_t)*256);
 }
 
 int32_t ScopeWidget::y2pix(float yvalue)
 {
     return static_cast<int32_t>((m_ymax - yvalue) / (m_ymax-m_ymin) * height());
+}
+
+int32_t ScopeWidget::x2pix(float xvalue)
+{
+    return static_cast<int32_t>(xvalue/256.0f*width());
 }
 
 void ScopeWidget::paintEvent(QPaintEvent *event)
@@ -136,12 +137,28 @@ void ScopeWidget::paintEvent(QPaintEvent *event)
     painter.setPen(Qt::green);
 
     size_t N = m_signal.size();
-    int32_t ypos_old = y2pix(m_signal[0]);
+    int32_t ypos_old = y2pix(m_signal[0].s1);
+    int32_t xpos_old = x2pix(0);
     for(size_t i=1; i<N; i++)
     {
-        int32_t ypos = y2pix(m_signal[i]);
-        painter.drawLine((int32_t)i-1,ypos_old,(int32_t)i,ypos);
+        int32_t ypos = y2pix(m_signal[i].s1);
+        int32_t xpos = x2pix(i);
+        painter.drawLine(xpos_old,ypos_old,xpos,ypos);
         ypos_old = ypos;
+        xpos_old = xpos;
+    }
+
+    painter.setPen(Qt::yellow);
+    N = m_signal.size();
+    ypos_old = y2pix(m_signal[0].s2);
+    xpos_old = x2pix(0);
+    for(size_t i=1; i<N; i++)
+    {
+        int32_t ypos = y2pix(m_signal[i].s2);
+        int32_t xpos = x2pix(i);
+        painter.drawLine(xpos_old,ypos_old,xpos,ypos);
+        ypos_old = ypos;
+        xpos_old = xpos;
     }
 }
 

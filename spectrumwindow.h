@@ -15,6 +15,7 @@
 
 #include <QDialog>
 #include "spectrumwidget.h"
+#include "virtualmachine.h"
 
 namespace Ui {
 class SpectrumWindow;
@@ -28,9 +29,11 @@ public:
     explicit SpectrumWindow(QWidget *parent = 0);
     ~SpectrumWindow();
 
+    void submit256Samples(VirtualMachine::ring_buffer_data_t *samples);
+
 private:
     Ui::SpectrumWindow *ui;
-    SpectrumWidget      *m_spectrum;
+    SpectrumWidget      *m_spectrum;    
 };
 
 #endif // SPECTRUMWINDOW_H

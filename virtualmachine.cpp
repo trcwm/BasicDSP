@@ -63,23 +63,13 @@ VirtualMachine::VirtualMachine(QMainWindow *guiWindow)
 {
     Pa_Initialize();
 
-    // for now, dump the devices to output
-    PaDeviceIndex count = Pa_GetDeviceCount();
-    for(PaDeviceIndex idx=0; idx<count; idx++)
-    {
-        const PaDeviceInfo *info = Pa_GetDeviceInfo(idx);
-        if (info != 0)
-        {
-            qDebug() << "-----------------------------------------";
-            qDebug() << idx << " -> " << info->name;
-            qDebug() << " Inputs: " << info->maxInputChannels;
-            qDebug() << " Outputs: " << info->maxOutputChannels;
+    //TODO: get configuration of soundcard
+    // from the registry or other
+    // configuration file ..
 
-            PaHostApiIndex hindex = info->hostApi;
-            const PaHostApiInfo *hinfo = Pa_GetHostApiInfo(hindex);
-            qDebug() << " API: " << hinfo->name;
-        }
-    }
+    m_inDevice = Pa_GetDefaultInputDevice();
+    m_outDevice = Pa_GetDefaultOutputDevice();
+    m_sampleRate = 44100.0f;
 
     /* Allocate ring buffers for GUI I/O.
 
@@ -91,10 +81,10 @@ VirtualMachine::VirtualMachine(QMainWindow *guiWindow)
        The number of float must be a power
        of two!
     */
-    for(uint32_t i=0; i<4; i++)
+    for(uint32_t i=0; i<2; i++)
     {
-        void *dataptr = new float[32768];
-        PaUtil_InitializeRingBuffer(&m_ringbuffer[i], sizeof(float),
+        void *dataptr = new ring_buffer_data_t[32768];
+        PaUtil_InitializeRingBuffer(&m_ringbuffer[i], sizeof(ring_buffer_data_t),
                                     32768, dataptr);
     }
 
@@ -108,10 +98,37 @@ VirtualMachine::~VirtualMachine()
     Pa_Terminate();
 
     // de-allocate the ring buffer data
-    for(uint32_t i=0; i<4; i++)
+    for(uint32_t i=0; i<2; i++)
     {
         delete m_ringbuffer[i].buffer;
     }
+}
+
+QString VirtualMachine::getDeviceName(PaDeviceIndex idx) const
+{
+    const PaDeviceInfo *info = Pa_GetDeviceInfo(idx);
+    if (info == 0)
+    {
+        return QString("No such device");
+    }
+
+    const PaHostApiInfo *hinfo = Pa_GetHostApiInfo(info->hostApi);
+    QString devicename = QString(info->name);
+    devicename.append(" [");
+    devicename.append(hinfo->name);
+    devicename.append("]");
+    return devicename;
+}
+
+PaDeviceIndex VirtualMachine::getDeviceIndexByName(const QString &name, bool input) const
+{
+    PaDeviceIndex count = Pa_GetDeviceCount();
+    for(PaDeviceIndex i=0; i<count; i++)
+    {
+        if (getDeviceName(i)==name)
+            return i;
+    }
+    return paNoDevice;  // no device
 }
 
 void VirtualMachine::init()
@@ -131,7 +148,7 @@ void VirtualMachine::init()
     m_rightLevel = 0.0f;
 
     // flush the data in the ring buffers
-    for(uint32_t i=0; i<4; i++)
+    for(uint32_t i=0; i<2; i++)
     {
         PaUtil_FlushRingBuffer(&m_ringbuffer[i]);
     }
@@ -139,7 +156,7 @@ void VirtualMachine::init()
 
 PaUtilRingBuffer* VirtualMachine::getRingBufferPtr(uint32_t idx)
 {
-    if (idx<4)
+    if (idx<2)
     {
         return &m_ringbuffer[idx];
     }
@@ -181,8 +198,28 @@ void VirtualMachine::loadProgram(const VM::program_t &program, const VM::variabl
     if (idx != -1) m_slider[3] = &(m_vars[idx].value);
 }
 
+void VirtualMachine::setupSoundcard(PaDeviceIndex inDevice, PaDeviceIndex outDevice, float sampleRate)
+{
+    qDebug() << "VirtualMachine::setupSoundcard";
+    qDebug() << " in:   " << inDevice;
+    qDebug() << " out:  " << outDevice;
+    qDebug() << " rate: " << sampleRate;
+
+    // stop the virtual machine
+    // no mutex needed here, as it's handled in the
+    // stop() function itself.
+
+    stop();
+
+    m_inDevice = inDevice;
+    m_outDevice = outDevice;
+    m_sampleRate = sampleRate;
+}
+
 bool VirtualMachine::start()
 {
+    qDebug() << "VirtualMachine::start()";
+
     QMutexLocker lock(&m_controlMutex);
 
     // check if portaudio is already running
@@ -196,19 +233,19 @@ bool VirtualMachine::start()
     m_leftLevel = 0.0f;
     m_rightLevel = 0.0f;
 
-    const double sampleRate = 48000;
+    const double sampleRate = m_sampleRate;
     const uint32_t framesPerBuffer = 0;
     PaSampleFormat sampleFormat = paFloat32;
     PaStreamParameters inputParams;
     PaStreamParameters outputParams;
 
     memset(&inputParams, 0, sizeof(inputParams));
-    inputParams.device = 9;
+    inputParams.device = m_inDevice;
     inputParams.channelCount = 2;
     inputParams.sampleFormat = sampleFormat;
 
     memset(&outputParams, 0, sizeof(outputParams));
-    outputParams.device = 8;
+    outputParams.device = m_outDevice;
     outputParams.channelCount = 2;
     outputParams.sampleFormat = sampleFormat;
 
@@ -347,8 +384,11 @@ void VirtualMachine::processSamples(float *inbuf, float *outbuf,
         // for now, write the Lout and Rout to the first two ring buffers
         // FIXME: don't call this per sample but do it in chunks to reduce
         // the overhead.
-        PaUtil_WriteRingBuffer(&m_ringbuffer[0], &outbuf[i<<1], 1);
-        PaUtil_WriteRingBuffer(&m_ringbuffer[1], &outbuf[(i<<1)+1], 1);
+        ring_buffer_data_t data;
+        data.s1 = outbuf[i<<1];
+        data.s2 = outbuf[(i<<1)+1];
+        PaUtil_WriteRingBuffer(&m_ringbuffer[0], &data, 1);
+        PaUtil_WriteRingBuffer(&m_ringbuffer[1], &data, 1);
     }
     m_controlMutex.unlock();
 }

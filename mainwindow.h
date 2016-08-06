@@ -3,11 +3,14 @@
 
 #include <QMainWindow>
 #include <QTimer>
+#include <QSettings>
+
 #include "virtualmachine.h"
 #include "namedslider.h"
 #include "vumeter.h"
 #include "spectrumwindow.h"
 #include "scopewindow.h"
+
 
 namespace Ui {
 class MainWindow;
@@ -29,12 +32,17 @@ private slots:
     void on_Slider3Changed(float value);
     void on_Slider4Changed(float value);
     void on_runButton_clicked();
-
     void on_SourceChanged();
+    void on_actionSoundcard_triggered();
 
-    void on_stopButton_clicked();
+    void on_scopeButton_clicked();
+
+    void on_actionFont_triggered();
 
 private:
+    void readSettings();
+    void writeSettings();
+
     Ui::MainWindow *ui;
 
     NamedSlider *m_slider1;
@@ -51,6 +59,8 @@ private:
 
     SpectrumWindow *m_spectrum;
     ScopeWindow    *m_scope;
+
+    QSettings m_settings;
 };
 
 #endif // MAINWINDOW_H

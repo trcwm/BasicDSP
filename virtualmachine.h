@@ -96,6 +96,12 @@ public:
     /** stop the execution of the program */
     void stop();
 
+    /** returns true if the virtual machine is running */
+    bool isRunning() const
+    {
+        return m_runState;
+    }
+
     /** execute VM */
     void processSamples(float *inbuf,
                         float *outbuf,
@@ -123,6 +129,37 @@ public:
         to allow the reading of data by the GUI thread */
     PaUtilRingBuffer* getRingBufferPtr(uint32_t i);
 
+    /** set the soundcard device parameters */
+    void setupSoundcard(PaDeviceIndex inDevice, PaDeviceIndex outDevice,
+                        float sampleRate);
+
+    PaDeviceIndex getInputDevice() const
+    {
+        return m_inDevice;
+    }
+
+    PaDeviceIndex getOutputDevice() const
+    {
+        return m_outDevice;
+    }
+
+    float getSamplerate() const
+    {
+        return m_sampleRate;
+    }
+
+    /** Get a sound device name by index */
+    QString getDeviceName(PaDeviceIndex idx) const;
+
+    /** Get a sound device index by name */
+    PaDeviceIndex getDeviceIndexByName(const QString &name, bool input) const;
+
+    struct ring_buffer_data_t
+    {
+        float s1;
+        float s2;
+    };
+
 protected:
     /** initialize internal pointers */
     void init();
@@ -142,10 +179,13 @@ protected:
 
     QMainWindow *m_guiWindow;
     PaStream    *m_stream;
+
+    PaDeviceIndex m_inDevice;
+    PaDeviceIndex m_outDevice;
     double      m_sampleRate;   // the current sample rate in Hz
+
     float       m_leftLevel;    // the left channel VU level
     float       m_rightLevel;   // the right channel VU level
-
     bool        m_runState;     // true if VM is running a program
 
     QMutex      m_controlMutex; // mutex to synchronize GUI and VM threads
@@ -171,7 +211,7 @@ protected:
     float   *m_monitorVar[4];
 
     // thread-safe ring buffers for GUI I/O
-    PaUtilRingBuffer m_ringbuffer[4];
+    PaUtilRingBuffer m_ringbuffer[2];
 };
 
 #endif

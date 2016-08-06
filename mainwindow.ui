@@ -28,13 +28,6 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="stopButton">
-        <property name="text">
-         <string>Stop</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -172,7 +165,15 @@
     <addaction name="separator"/>
     <addaction name="actionAbout"/>
    </widget>
+   <widget class="QMenu" name="menuSetup">
+    <property name="title">
+     <string>Setup</string>
+    </property>
+    <addaction name="actionSoundcard"/>
+    <addaction name="actionFont"/>
+   </widget>
    <addaction name="menu_File"/>
+   <addaction name="menuSetup"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
@@ -214,6 +215,16 @@
   <action name="actionAbout">
    <property name="text">
     <string>About</string>
+   </property>
+  </action>
+  <action name="actionSoundcard">
+   <property name="text">
+    <string>Soundcard</string>
+   </property>
+  </action>
+  <action name="actionFont">
+   <property name="text">
+    <string>Font</string>
    </property>
   </action>
  </widget>

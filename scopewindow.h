@@ -2,6 +2,7 @@
 #define SCOPEWINDOW_H
 
 #include <QDialog>
+#include "virtualmachine.h"
 #include "scopewidget.h"
 
 namespace Ui {
@@ -16,7 +17,7 @@ public:
     explicit ScopeWindow(QWidget *parent = 0);
     ~ScopeWindow();
 
-    void submit256Samples(float *buffer);
+    void submit256Samples(VirtualMachine::ring_buffer_data_t *buffer);
 
 private:
     Ui::ScopeWindow *ui;
