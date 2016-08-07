@@ -19,6 +19,9 @@ public:
 
     void submit256Samples(VirtualMachine::ring_buffer_data_t *buffer);
 
+    /** set the sample rate for x-axis scaling */
+    void setSampleRate(float rate);
+
 private:
     Ui::ScopeWindow *ui;
 

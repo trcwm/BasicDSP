@@ -15,7 +15,9 @@
 #include "scopewidget.h"
 
 ScopeWidget::ScopeWidget(QWidget *parent)
-    : QWidget(parent), m_bkbuffer(0)
+    : QWidget(parent),
+      m_bkbuffer(0),
+      m_forceAxisRedraw(false)
 {
     m_ymax = 1.1f;
     m_ymin = -1.1f;
@@ -27,6 +29,12 @@ ScopeWidget::ScopeWidget(QWidget *parent)
 void ScopeWidget::submit256Samples(VirtualMachine::ring_buffer_data_t *buffer)
 {
     memcpy(&m_signal[0], buffer, sizeof(VirtualMachine::ring_buffer_data_t)*256);
+}
+
+void ScopeWidget::setSampleRate(float rate)
+{
+    m_timespan = 256.0f/rate;
+    m_forceAxisRedraw = true;
 }
 
 int32_t ScopeWidget::y2pix(float yvalue)
@@ -46,7 +54,8 @@ void ScopeWidget::paintEvent(QPaintEvent *event)
     // create a new back buffer if the widget got
     // resized or if there isn't one
     if ((m_bkbuffer == 0) || (m_bkbuffer->width() != width())
-            || (m_bkbuffer->height() != height()))
+            || (m_bkbuffer->height() != height())
+            || m_forceAxisRedraw)
     {
         if (m_bkbuffer != 0)
             delete m_bkbuffer;
@@ -131,6 +140,7 @@ void ScopeWidget::paintEvent(QPaintEvent *event)
             bpainter.fillRect(textRect, Qt::black);
             bpainter.drawText(textRect,Qt::AlignCenter, string);
         }
+        m_forceAxisRedraw = false;
     }
     QPainter painter(this);
     painter.drawImage(rect(), *m_bkbuffer);

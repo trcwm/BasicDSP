@@ -92,6 +92,8 @@ void MainWindow::readSettings()
     PaDeviceIndex inDevice = m_machine->getDeviceIndexByName(inputDeviceName, true);
     PaDeviceIndex outDevice = m_machine->getDeviceIndexByName(outputDeviceName, false);
     m_machine->setupSoundcard(inDevice, outDevice, samplerate);
+    m_spectrum->setSampleRate(samplerate);
+    m_scope->setSampleRate(samplerate);
 
     qDebug() << "Loading settings.. ";
     qDebug() << "input device : " << inputDeviceName;
@@ -156,9 +158,7 @@ void MainWindow::on_GUITimer()
         PaUtil_ReadRingBuffer(rbPtr, data, 256);
         if (!m_spectrum->isHidden())
         {
-            VirtualMachine::ring_buffer_data_t spec[256];
-            m_fft.process256(data, spec);
-            m_spectrum->submit256Samples(spec);
+            m_spectrum->submit256Samples(data);
         }
         items = PaUtil_GetRingBufferReadAvailable(rbPtr);
     }
@@ -335,6 +335,9 @@ void MainWindow::on_actionSoundcard_triggered()
         m_machine->setupSoundcard(dialog->getInputSource(),
                                   dialog->getOutputSource(),
                                   dialog->getSamplerate());
+
+        m_spectrum->setSampleRate(dialog->getSamplerate());
+        m_scope->setSampleRate(dialog->getSamplerate());
     }
     delete dialog;
 }

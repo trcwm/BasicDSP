@@ -15,25 +15,67 @@
 
 fft::fft()
 {
-    const float pi2 = 2.0f*3.1415927f;
-    const float Nm1 = fft_size-1;
-
     // setup forward FFT
     m_config = kiss_fft_alloc(fft_size,0,NULL,NULL);
     m_data.resize(fft_size);
 
     // setup hamming & hann windows
     m_window.resize(fft_size);
-    for(uint32_t i=0; i<fft_size; i++)
-    {
-        //m_window[i] = sqrt(2.0f)*2.0f*(0.54f + 0.46f*cos(pi2*(float)i/Nm1))/(float)fft_size;
-        m_window[i] = sqrt(2.0f)*2.0f*(0.50f + 0.50f*cos(pi2*(float)i/Nm1))/(float)fft_size;
-    }
+    setWindow(WIN_FLATTOP);
 }
 
 fft::~fft()
 {
     kiss_fft_free(m_config);
+}
+
+void fft::setWindow(windowType wintype)
+{
+    const float pi = 3.1415927f;
+    const float pi2 = 2.0f*3.1415927f;
+    const float pi4 = 4.0f*3.1415927f;
+    const float Nm1 = fft_size-1;
+
+    double sum = 0.0f;
+    for(uint32_t i=0; i<fft_size; i++)
+    {
+        switch(wintype)
+        {
+        case WIN_NONE:
+            m_window[i] = 1.0f;
+            break;
+        case WIN_HANN:
+            m_window[i] = 0.50f + 0.50f*cos(pi2*(float)i/Nm1);
+            break;
+        case WIN_HAMMING:
+            m_window[i] = 0.54f + 0.46f*cos(pi2*(float)i/Nm1);
+            break;
+        case WIN_BLACKMAN:
+            m_window[i] = 0.42659f - 0.49656f*cos(pi2*(float)i/Nm1)
+                                   + 0.076849f*cos(pi4*(float)i/Nm1);
+            break;
+        case WIN_FLATTOP:
+            m_window[i] = 1.0f;
+            m_window[i]-= 1.93f*cos(2.0f*pi*(float)i/Nm1);
+            m_window[i]+= 1.29f*cos(4.0f*pi*(float)i/Nm1);
+            m_window[i]-= 0.388f*cos(6.0f*pi*(float)i/Nm1);
+            m_window[i]+= 0.028f*cos(8.0f*pi*(float)i/Nm1);
+            break;
+        }
+        sum+=m_window[i];
+    }
+
+    // normalize the window so that a sine wave without leakage
+    // is always at 0 dB
+    //
+    // fft normalization factor is sqrt(2.0f)/fft_size
+    // window normalization factor is 256/sum;
+
+    for(uint32_t i=0; i<fft_size; i++)
+    {
+        m_window[i] *= 256.0f*sqrt(2.0f)/(float)fft_size/sum;
+    }
+    m_winType = wintype;
 }
 
 void fft::process256(const VirtualMachine::ring_buffer_data_t *inbuffer,
@@ -56,3 +98,5 @@ void fft::process256(const VirtualMachine::ring_buffer_data_t *inbuffer,
     kiss_fft(m_config, (const kiss_fft_cpx *)&m_data[0],
              (kiss_fft_cpx *)outbuffer);
 }
+
+

@@ -62,8 +62,6 @@ private:
     SpectrumWindow *m_spectrum;
     ScopeWindow    *m_scope;
 
-    fft             m_fft;
-
     QSettings m_settings;
 };
 

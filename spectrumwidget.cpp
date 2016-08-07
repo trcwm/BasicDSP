@@ -16,7 +16,12 @@
 #include "spectrumwidget.h"
 
 SpectrumWidget::SpectrumWidget(QWidget *parent)
-    : QWidget(parent), m_bkbuffer(0)
+    : QWidget(parent),
+      m_bkbuffer(0),
+      m_avgConstant(0.0f),
+      m_smoothingLevel(0),
+      m_forceAxisRedraw(true),
+      m_complexMode(false)
 {
     m_dbmin = -65.0f;
     m_dbmax = 5.0f;
@@ -27,14 +32,56 @@ SpectrumWidget::SpectrumWidget(QWidget *parent)
     setFont(smallFont);
 
     m_dbData.resize(256);
+    m_fftsig.resize(256);
+    m_smoothed.resize(256);
+}
+
+/** Set the time constant for smoothing.
+    This factor is applied once every FFT frame,
+    so time is relative to the number of
+    frames.
+
+    Time constant (66%):
+    level 0: no smoothing
+    level 1: 10 frames
+    level 2: 20 frames
+    level 3: 50 frames
+    level 4: 100 frames
+*/
+
+void SpectrumWidget::setSmoothingLevel(uint32_t level)
+{
+    switch(level)
+    {
+    default:
+    case 0:
+        m_avgConstant = 0.0f;
+        break;
+    case 1:
+        m_avgConstant = pow(0.33f, 1.0f/10.0f);
+        break;
+    case 2:
+        m_avgConstant = pow(0.33f, 1.0f/20.0f);
+        break;
+    case 3:
+        m_avgConstant = pow(0.33f, 1.0f/50.0f);
+        break;
+    case 4:
+        m_avgConstant = pow(0.33f, 1.0f/100.0f);
+        break;
+    }
+    m_smoothingLevel = level;
 }
 
 void SpectrumWidget::submit256Samples(const VirtualMachine::ring_buffer_data_t *samples)
 {
+    m_fft.process256(samples, &m_fftsig[0]);
     for(uint32_t i=0; i<256; i++)
     {
         // add 1e-20f to stop log10 from producing NaNs.
-        m_dbData[i] = 10.0f*log10(samples[i].s1*samples[i].s1 + samples[i].s2*samples[i].s2+1e-20f);
+        float mag = m_fftsig[i].s1*m_fftsig[i].s1 + m_fftsig[i].s2*m_fftsig[i].s2+1e-20f;
+        m_smoothed[i] = mag + m_avgConstant*(m_smoothed[i]-mag);
+        m_dbData[i] = 10.0f*log10(m_smoothed[i]);
     }
 }
 
@@ -45,7 +92,8 @@ void SpectrumWidget::paintEvent(QPaintEvent *event)
     // create a new back buffer if the widget got
     // resized or if there isn't one
     if ((m_bkbuffer == 0) || (m_bkbuffer->width() != width())
-            || (m_bkbuffer->height() != height()))
+            || (m_bkbuffer->height() != height())
+            || m_forceAxisRedraw)
     {
         if (m_bkbuffer != 0)
             delete m_bkbuffer;
@@ -54,6 +102,18 @@ void SpectrumWidget::paintEvent(QPaintEvent *event)
         QPainter bpainter(m_bkbuffer);
 
         bpainter.fillRect(rect(), Qt::black);
+
+        // calculate the frequency axis span
+        if (!m_complexMode)
+        {
+            m_fmin  = 0.0f;
+            m_fmax  = m_sampleRate/2.0f;
+        }
+        else
+        {
+            m_fmin  = -m_sampleRate/2.0f;
+            m_fmax  = m_sampleRate/2.0f;
+        }
 
         // draw the horizontal divisions
         QString string;
@@ -124,21 +184,37 @@ void SpectrumWidget::paintEvent(QPaintEvent *event)
             bpainter.fillRect(textRect, Qt::black);
             bpainter.drawText(textRect,Qt::AlignCenter, string);
         }
+        m_forceAxisRedraw = false;
     }
     QPainter painter(this);
     painter.drawImage(rect(), *m_bkbuffer);
     painter.setPen(Qt::yellow);
 
-
-    int32_t ypos_old = db2pix(m_dbData[0]);
-    int32_t xpos_old = 0;
-    for(uint32_t i=1; i<256; i++)
+    if (m_complexMode)
     {
-        int32_t ypos = db2pix(m_dbData[i]);
-        int32_t xpos = x2pix(i);
-        painter.drawLine(xpos_old, ypos_old, xpos, ypos);
-        xpos_old = xpos;
-        ypos_old = ypos;
+        int32_t ypos_old = db2pix(m_dbData[0]);
+        int32_t xpos_old = 0;
+        for(uint32_t i=1; i<256; i++)
+        {
+            int32_t ypos = db2pix(m_dbData[i]);
+            int32_t xpos = x2pix(i);
+            painter.drawLine(xpos_old, ypos_old, xpos, ypos);
+            xpos_old = xpos;
+            ypos_old = ypos;
+        }
+    }
+    else
+    {
+        int32_t ypos_old = db2pix(m_dbData[0]);
+        int32_t xpos_old = 0;
+        for(uint32_t i=1; i<128; i++)
+        {
+            int32_t ypos = db2pix(m_dbData[i]);
+            int32_t xpos = x2pix(i);
+            painter.drawLine(xpos_old, ypos_old, xpos, ypos);
+            xpos_old = xpos;
+            ypos_old = ypos;
+        }
     }
 }
 
@@ -149,5 +225,8 @@ int32_t SpectrumWidget::db2pix(float db)
 
 int32_t SpectrumWidget::x2pix(float xvalue)
 {
-    return static_cast<int32_t>(xvalue/256.0f*width());
+    if (m_complexMode)
+        return static_cast<int32_t>(xvalue/256.0f*width());
+    else
+        return static_cast<int32_t>(xvalue/128.0f*width());
 }

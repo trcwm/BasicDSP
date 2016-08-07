@@ -17,6 +17,7 @@
 #include <vector>
 #include <QWidget>
 #include <QImage>
+#include "fft.h"
 #include "virtualmachine.h"
 
 class SpectrumWidget : public QWidget
@@ -25,8 +26,37 @@ class SpectrumWidget : public QWidget
 public:
     SpectrumWidget(QWidget *parent);
 
-    /** submit 256 FFT'd samples */
+    /** submit 256 time-domain samples */
     void submit256Samples(const VirtualMachine::ring_buffer_data_t *samples);
+
+    /** set the window type for the FFT */
+    void setWindow(fft::windowType type)
+    {
+        m_fft.setWindow(type);
+    }
+
+    /** get the current window type */
+    fft::windowType getWindow() const
+    {
+        return m_fft.getWindow();
+    }
+
+    /** set the smoothing level */
+    void setSmoothingLevel(uint32_t level);
+
+    /** get the current smoothing level */
+    uint32_t getSmoothingLevel() const
+    {
+        return m_smoothingLevel;
+    }
+
+    /** set the sample rate of the submitted data
+        to generate the correct frequency axis */
+    void setSampleRate(float rate)
+    {
+        m_sampleRate = rate;
+        m_forceAxisRedraw = true;
+    }
 
 protected:
     void paintEvent(QPaintEvent *event);
@@ -35,12 +65,19 @@ protected:
     int32_t x2pix(float xvalue);
 
     std::vector<float> m_dbData;
-    //std::vector<VirtualMachine::ring_buffer_data_t>  m_signal;
+    std::vector<float> m_smoothed;
+    std::vector<VirtualMachine::ring_buffer_data_t>  m_fftsig;
 
     float m_dbmin,m_dbmax;
     float m_fmin,m_fmax;
+    float m_avgConstant;
+    float m_sampleRate;
+    bool  m_forceAxisRedraw;
+    bool  m_complexMode;
+    uint32_t m_smoothingLevel;
 
     QImage *m_bkbuffer;
+    fft    m_fft;
 };
 
 

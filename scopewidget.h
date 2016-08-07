@@ -27,6 +27,9 @@ public:
 
     void submit256Samples(VirtualMachine::ring_buffer_data_t *buffer);
 
+    /** set sample rate for correct x-axis scaling */
+    void setSampleRate(float rate);
+
 protected:
     void paintEvent(QPaintEvent *event);
 
@@ -37,7 +40,7 @@ protected:
 
     float m_timespan;
     float m_ymin,m_ymax;
-
+    bool m_forceAxisRedraw;
     QImage *m_bkbuffer;
 };
 
