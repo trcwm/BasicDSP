@@ -22,12 +22,12 @@ fft::fft()
     m_config = kiss_fft_alloc(fft_size,0,NULL,NULL);
     m_data.resize(fft_size);
 
-    // setup hamming window
+    // setup hamming & hann windows
     m_window.resize(fft_size);
     for(uint32_t i=0; i<fft_size; i++)
     {
-        //m_window[i] = (0.54f + 0.46f*cos(pi2*(float)i/Nm1))/sqrt((float)fft_size);
-        m_window[i] = 1.0f/fft_size;
+        //m_window[i] = sqrt(2.0f)*2.0f*(0.54f + 0.46f*cos(pi2*(float)i/Nm1))/(float)fft_size;
+        m_window[i] = sqrt(2.0f)*2.0f*(0.50f + 0.50f*cos(pi2*(float)i/Nm1))/(float)fft_size;
     }
 }
 
