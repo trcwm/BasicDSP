@@ -12,6 +12,7 @@
 
 #include <QDebug>
 #include <QMutexLocker>
+#include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <algorithm>
