@@ -16,7 +16,7 @@
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="mainLayout">
     <item>
-     <widget class="QPlainTextEdit" name="sourceEditor"/>
+     <layout class="QVBoxLayout" name="sourceEditorLayout"/>
     </item>
     <item>
      <layout class="QHBoxLayout" name="buttonLayout">

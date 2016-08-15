@@ -1,6 +1,6 @@
 #include "soundcarddialog.h"
 #include "ui_soundcarddialog.h"
-
+#include "portaudio_helper.h"
 
 SoundcardDialog::SoundcardDialog(QWidget *parent) :
     QDialog(parent),
@@ -13,23 +13,14 @@ SoundcardDialog::SoundcardDialog(QWidget *parent) :
     for(PaDeviceIndex idx=0; idx<count; idx++)
     {
         const PaDeviceInfo *info = Pa_GetDeviceInfo(idx);
-        if (info != 0)
+        QString deviceName = PA_Helper::getDeviceString(idx);
+        if (info->maxInputChannels > 0)
         {
-            const PaHostApiInfo *hinfo = Pa_GetHostApiInfo(info->hostApi);
-
-            QString devicename = QString(info->name);
-            devicename.append(" [");
-            devicename.append(hinfo->name);
-            devicename.append("]");
-
-            if (info->maxInputChannels > 0)
-            {
-                ui->inputComboBox->addItem(devicename, QVariant(idx));
-            }
-            if (info->maxOutputChannels > 0)
-            {
-                ui->outputComboBox->addItem(devicename, QVariant(idx));
-            }
+            ui->inputComboBox->addItem(deviceName, QVariant(idx));
+        }
+        if (info->maxOutputChannels > 0)
+        {
+            ui->outputComboBox->addItem(deviceName, QVariant(idx));
         }
     }
 }

@@ -104,32 +104,7 @@ VirtualMachine::~VirtualMachine()
     }
 }
 
-QString VirtualMachine::getDeviceName(PaDeviceIndex idx) const
-{
-    const PaDeviceInfo *info = Pa_GetDeviceInfo(idx);
-    if (info == 0)
-    {
-        return QString("No such device");
-    }
 
-    const PaHostApiInfo *hinfo = Pa_GetHostApiInfo(info->hostApi);
-    QString devicename = QString(info->name);
-    devicename.append(" [");
-    devicename.append(hinfo->name);
-    devicename.append("]");
-    return devicename;
-}
-
-PaDeviceIndex VirtualMachine::getDeviceIndexByName(const QString &name, bool input) const
-{
-    PaDeviceIndex count = Pa_GetDeviceCount();
-    for(PaDeviceIndex i=0; i<count; i++)
-    {
-        if (getDeviceName(i)==name)
-            return i;
-    }
-    return paNoDevice;  // no device
-}
 
 void VirtualMachine::init()
 {
@@ -196,6 +171,13 @@ void VirtualMachine::loadProgram(const VM::program_t &program, const VM::variabl
     if (idx != -1) m_slider[2] = &(m_vars[idx].value);
     idx = VM::findVariableByName(m_vars, "slider4");
     if (idx != -1) m_slider[3] = &(m_vars[idx].value);
+
+    // setup sample rate
+    idx = VM::findVariableByName(m_vars, "samplerate");
+    if (idx != -1)
+    {
+        m_vars[idx].value = m_sampleRate;
+    }
 }
 
 void VirtualMachine::setupSoundcard(PaDeviceIndex inDevice, PaDeviceIndex outDevice, float sampleRate)

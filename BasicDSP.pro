@@ -82,10 +82,12 @@ SOURCES += main.cpp\
         logging.cpp\
         asttovm.cpp\
         fft.cpp\
+        portaudio_helper.cpp\
         spectrumwidget.cpp\
         spectrumwindow.cpp\
         scopewindow.cpp\
         scopewidget.cpp\
+        codeeditor.cpp\
         mainwindow.cpp\
         soundcarddialog.cpp
 
@@ -98,11 +100,13 @@ HEADERS  += mainwindow.h\
             logging.h\
             asttovm.h\
             fft.h\
+            portaudio_helper.h\
             spectrumwidget.h\
             spectrumwindow.h\
             virtualmachine.h \
             scopewindow.h\
             scopewidget.h \
+            codeeditor.h\
             soundcarddialog.h
 
 FORMS    += mainwindow.ui \

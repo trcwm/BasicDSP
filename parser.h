@@ -6,6 +6,8 @@
 
   Author: Niels A. Moseley (c) 2016
 
+  License: GPLv2
+
 */
 
 #ifndef parser_h

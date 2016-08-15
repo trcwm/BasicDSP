@@ -1,6 +1,8 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QFontDialog>
+#include <QFileDialog>
+#include <QMessageBox>
 
 #include <sstream>
 #include "reader.h"
@@ -10,6 +12,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "pa_ringbuffer.h"
+#include "portaudio_helper.h"
 #include "soundcarddialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -19,9 +22,13 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    /** set code editor */
+    m_sourceEditor = new CodeEditor(this);
+    ui->sourceEditorLayout->addWidget(m_sourceEditor);
+
     /** set source editor font */
     const QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-    ui->sourceEditor->setFont(fixedFont);
+    m_sourceEditor->setFont(fixedFont);
 
     /** add four sliders programatically */
     m_slider1 = new NamedSlider("slider 1", this);
@@ -89,8 +96,8 @@ void MainWindow::readSettings()
     QString outputDeviceName = m_settings.value("soundcard/output","").toString();
     float samplerate = m_settings.value("soundcard/samplerate", 44100.0f).toFloat();
 
-    PaDeviceIndex inDevice = m_machine->getDeviceIndexByName(inputDeviceName, true);
-    PaDeviceIndex outDevice = m_machine->getDeviceIndexByName(outputDeviceName, false);
+    PaDeviceIndex inDevice = PA_Helper::getDeviceIndexByName(inputDeviceName);
+    PaDeviceIndex outDevice = PA_Helper::getDeviceIndexByName(outputDeviceName);
     m_machine->setupSoundcard(inDevice, outDevice, samplerate);
     m_spectrum->setSampleRate(samplerate);
     m_scope->setSampleRate(samplerate);
@@ -105,19 +112,134 @@ void MainWindow::readSettings()
     {
         resize(sizeVariant.toSize());
     }
+
+    m_lastDirectory = m_settings.value("lastdir", "").toString();
 }
 
 void MainWindow::writeSettings()
 {
-    QString inputDevice = m_machine->getDeviceName(m_machine->getInputDevice());
-    QString outputDevice = m_machine->getDeviceName(m_machine->getOutputDevice());
+    QString inputDevice = PA_Helper::getDeviceString(m_machine->getInputDevice());
+    QString outputDevice = PA_Helper::getDeviceString(m_machine->getOutputDevice());
     m_settings.setValue("soundcard/input",inputDevice);
     m_settings.setValue("soundcard/output",outputDevice);
     m_settings.setValue("soundcard/samplerate", m_machine->getSamplerate());
 
     m_settings.setValue("mainwindow/size", size());
+
+    m_settings.setValue("lastdir", m_lastDirectory);
 }
 
+bool MainWindow::save()
+{
+    if (m_filepath=="")
+    {
+        m_filepath = askForFilename();
+        if (m_filepath == "")
+            return false; // user cancelled
+    }
+
+    // try to save
+    if (saveScriptFile(m_filepath))
+    {
+        return true;
+    }
+
+    // save failed ..
+    // prompt user for different file name
+    do
+    {
+        QMessageBox msgBox;
+        QString msg("Error writing file -- permissions?");
+        msgBox.setText(msg);
+        msgBox.exec();
+
+    } while ((m_filepath != "") || (saveScriptFile(m_filepath)==false));
+    return false;
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    // check if we need to save the BasicDSP script
+    const QTextDocument *doc = m_sourceEditor->document();
+    if (doc->isModified() || (m_filepath.isEmpty() && !doc->isEmpty()))
+    {
+        QMessageBox msgBox;
+        QString msg("Closing BasicDSP - Do you want to save the changes?");
+        msgBox.setText(msg);
+        msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+
+        switch(msgBox.exec())
+        {
+        case QMessageBox::Save:
+            if (!save())
+            {
+                // file not saved
+                // user cancelled
+                event->ignore();
+            }
+            else
+            {
+                event->accept();
+            }
+            writeSettings();
+            break;
+        case QMessageBox::Discard:
+            writeSettings();
+            event->accept();
+            break;
+        default:
+        case QMessageBox::Cancel:
+            event->ignore();
+            break;
+        }
+    }
+}
+
+QString MainWindow::askForFilename()
+{
+    QString filePath = QFileDialog::getSaveFileName(this, tr("Save File"),
+                               m_lastDirectory,
+                               tr("BasicDSP files (*.dsp)"));
+    return filePath;
+}
+
+bool MainWindow::saveScriptFile(const QString &filePath)
+{
+    QFile file;
+    file.setFileName(filePath);
+
+    if (!file.open(QIODevice::ReadWrite | QIODevice::Text))
+    {
+        return false;
+    }
+
+    QTextStream stream(&file);
+    stream << m_sourceEditor->toPlainText();
+    file.flush();
+    file.close();
+    m_filepath = filePath;
+
+    QTextDocument *doc = m_sourceEditor->document();
+    QFileInfo info(filePath);
+    doc->setModified(false);
+    m_lastDirectory = info.path();
+    updateBasicDSPWindowTitle();
+    return true;
+}
+
+void MainWindow::updateBasicDSPWindowTitle()
+{
+    QString title("BasicDSP 2.0 ");
+    QFileInfo info(m_filepath);
+    QString fn = info.fileName();
+    if (!fn.isEmpty())
+    {
+        title.append("[");
+        title.append(fn);
+        title.append("]");
+    }
+    setWindowTitle(title);
+}
 
 void MainWindow::on_GUITimer()
 {
@@ -169,7 +291,8 @@ void MainWindow::on_actionExit_triggered()
 {
     //TODO: check for unsaved things
     //      quit any running threads.
-    QCoreApplication::exit(0);
+
+    close();
 }
 
 void MainWindow::on_runButton_clicked()
@@ -184,7 +307,7 @@ void MainWindow::on_runButton_clicked()
     Parser    parser;
     Tokenizer tokenizer;
 
-    Reader *reader = Reader::create(ui->sourceEditor->toPlainText());
+    Reader *reader = Reader::create(m_sourceEditor->toPlainText());
     if (reader == 0)
     {
         // error, probably due to an empty source code editor
@@ -230,10 +353,12 @@ void MainWindow::on_runButton_clicked()
         QString txt = QString("Program error on line %1: ").arg(pos.line+1);
         txt.append(parser.getLastError().c_str());
         ui->statusBar->showMessage(txt);
+        m_sourceEditor->setErrorLine(pos.line+1);
     }
     else
     {
         ui->statusBar->showMessage("Program accepted!");
+        m_sourceEditor->setErrorLine(0);
     }
 
 
@@ -355,11 +480,11 @@ void MainWindow::on_scopeButton_clicked()
 void MainWindow::on_actionFont_triggered()
 {
     QFontDialog *dialog = new QFontDialog(this);
-    dialog->setCurrentFont(ui->sourceEditor->font());
+    dialog->setCurrentFont(m_sourceEditor->font());
     int result = dialog->exec();
     if (result == 1)
     {
-        ui->sourceEditor->setFont(dialog->selectedFont());
+        m_sourceEditor->setFont(dialog->selectedFont());
     }
     delete dialog;
 }
@@ -370,4 +495,58 @@ void MainWindow::on_pushButton_clicked()
         m_spectrum->show();
     else
         m_spectrum->hide();
+}
+
+void MainWindow::on_actionSave_triggered()
+{
+    // save the file, prompting the user
+    // for a filename if m_filepath is
+    // empty
+    save();
+}
+
+
+void MainWindow::on_actionSave_As_triggered()
+{
+    // call save with m_filepath set to ""
+    // thus triggering an immediate prompt
+    // for a file name
+
+    QString oldFilepath = m_filepath;
+    m_filepath = "";
+    if (!save())
+    {
+        // user cancelleds
+        m_filepath = oldFilepath;
+    }
+}
+
+void MainWindow::on_action_Open_triggered()
+{
+    QString filepath = QFileDialog::getOpenFileName(this, tr("Open File"),
+                                                    m_lastDirectory,
+                                                    tr("BasicDSP files (*.dsp)"));
+    if (filepath == "")
+        return; // user cancelled
+
+    QFile file;
+    file.setFileName(filepath);
+    QFileInfo info(filepath);
+
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        QMessageBox msgBox;
+        QString txt("Cannot open file ");
+        txt.append(info.fileName());
+        msgBox.setText(txt);
+        msgBox.exec();
+        return;
+    }
+
+    m_sourceEditor->setPlainText(file.readAll());
+    m_sourceEditor->document()->setModified(false);
+    file.close();
+    m_filepath = filepath;
+    m_lastDirectory = info.path();
+    updateBasicDSPWindowTitle();
 }
