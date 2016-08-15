@@ -56,6 +56,21 @@ win32 {
     LIBS += winmm.lib dsound.lib user32.lib Advapi32.lib
 }
 
+## linux make
+## needs: libasound2-dev
+unix {
+    DEFINES += PA_USE_ALSA
+
+    INCLUDEPATH += contrib/portaudio/src/os/unix
+
+    SOURCES += contrib/portaudio/src/os/unix/pa_unix_hostapis.c \
+               contrib/portaudio/src/os/unix/pa_unix_util.c
+
+    SOURCES += contrib/portaudio/src/hostapi/alsa/pa_linux_alsa.c
+
+    LIBS += -lasound
+}
+
 ## Todo: linux specific stuff, OSX specific stuff
 
 ################################################################################
