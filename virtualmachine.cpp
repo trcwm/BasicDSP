@@ -224,11 +224,13 @@ bool VirtualMachine::start()
 
     memset(&inputParams, 0, sizeof(inputParams));
     inputParams.device = m_inDevice;
+    inputParams.suggestedLatency = 0.2f;
     inputParams.channelCount = 2;
     inputParams.sampleFormat = sampleFormat;
 
     memset(&outputParams, 0, sizeof(outputParams));
     outputParams.device = m_outDevice;
+    outputParams.suggestedLatency = 0.2f;
     outputParams.channelCount = 2;
     outputParams.sampleFormat = sampleFormat;
 

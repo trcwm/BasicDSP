@@ -14,10 +14,12 @@
 #define fft_size 256
 
 fft::fft()
+    : m_mode(MODE_NORMAL)
 {
     // setup forward FFT
     m_config = kiss_fft_alloc(fft_size,0,NULL,NULL);
     m_data.resize(fft_size);
+    m_result.resize(fft_size);
 
     // setup hamming & hann windows
     m_window.resize(fft_size);
@@ -45,10 +47,10 @@ void fft::setWindow(windowType wintype)
             m_window[i] = 1.0f;
             break;
         case WIN_HANN:
-            m_window[i] = 0.50f + 0.50f*cos(pi2*(float)i/Nm1);
+            m_window[i] = 0.50f - 0.50f*cos(pi2*(float)i/Nm1);
             break;
         case WIN_HAMMING:
-            m_window[i] = 0.54f + 0.46f*cos(pi2*(float)i/Nm1);
+            m_window[i] = 0.54f - 0.46f*cos(pi2*(float)i/Nm1);
             break;
         case WIN_BLACKMAN:
             m_window[i] = 0.42659f - 0.49656f*cos(pi2*(float)i/Nm1)
@@ -73,7 +75,7 @@ void fft::setWindow(windowType wintype)
 
     for(uint32_t i=0; i<fft_size; i++)
     {
-        m_window[i] *= 256.0f*sqrt(2.0f)/(float)fft_size/sum;
+        m_window[i] *= 256.0f/(float)fft_size/sum;
     }
     m_winType = wintype;
 }
@@ -95,8 +97,34 @@ void fft::process256(const VirtualMachine::ring_buffer_data_t *inbuffer,
         m_data[i].s2 = inbuffer[i].s2 * m_window[i];
     }
 
-    kiss_fft(m_config, (const kiss_fft_cpx *)&m_data[0],
-             (kiss_fft_cpx *)outbuffer);
+    switch(m_mode)
+    {
+    default:
+    case MODE_NORMAL:   // normal 2-channel mode
+        kiss_fft(m_config, (const kiss_fft_cpx *)&m_data[0],
+                 (kiss_fft_cpx *)&m_result[0]);
+
+        for(uint32_t i=1; i<fft_size/2; i++)
+        {
+            outbuffer[i].s1 = (m_result[i].s1 + m_result[fft_size-i].s1);
+            outbuffer[i].s2 = (m_result[i].s2 - m_result[fft_size-i].s2);
+        }
+        outbuffer[0].s1 = (m_result[0].s1 + m_result[0].s1)/4.0f;
+        outbuffer[0].s2 = (m_result[0].s2 - m_result[0].s2)/4.0f;
+
+        for(uint32_t i=1; i<fft_size/2; i++)
+        {
+            outbuffer[i+(fft_size/2)].s1 = (m_result[i].s2 + m_result[fft_size-i].s2);
+            outbuffer[i+(fft_size/2)].s2 = (-m_result[i].s1 + m_result[fft_size-i].s1);
+        }
+        outbuffer[(fft_size/2)].s1 = (m_result[0].s2 + m_result[0].s2)/4.0f;
+        outbuffer[(fft_size/2)].s2 = (-m_result[0].s1 + m_result[0].s1)/4.0f;
+        break;
+    case MODE_IQ:       // no change needed!
+        kiss_fft(m_config, (const kiss_fft_cpx *)&m_data[0],
+                 (kiss_fft_cpx *)outbuffer);
+        break;
+    }
 }
 
 

@@ -24,7 +24,14 @@ public:
     PaDeviceIndex getOutputSource();
     float         getSamplerate();
 
+
+private slots:
+    void on_inputComboBox_currentIndexChanged(int index);
+
+    void on_outputComboBox_currentIndexChanged(int index);
+
 private:
+    void checkSupport();
     Ui::SoundcardDialog *ui;
 };
 

@@ -39,10 +39,28 @@ public:
         return m_winType;
     }
 
+    enum mode_t
+    {
+        MODE_NORMAL,
+        MODE_IQ
+    };
+
+    void setMode(mode_t mode)
+    {
+        m_mode = mode;
+    }
+
+    mode_t getMode() const
+    {
+        return m_mode;
+    }
 protected:
     std::vector<VirtualMachine::ring_buffer_data_t> m_data;
+    std::vector<VirtualMachine::ring_buffer_data_t> m_result;
     std::vector<float> m_window;
     kiss_fft_cfg m_config;
+
+    mode_t m_mode;
 
     windowType m_winType;
     float      m_avgConstant;

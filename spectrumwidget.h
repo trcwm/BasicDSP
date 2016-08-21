@@ -58,6 +58,14 @@ public:
         m_forceAxisRedraw = true;
     }
 
+    /** set the mode of the FFT to normal
+        (2-channel mode) or complex mode */
+    void setMode(fft::mode_t mode)
+    {
+        m_fft.setMode(mode);
+        m_forceAxisRedraw = true;
+    }
+
 protected:
     void paintEvent(QPaintEvent *event);
 
@@ -73,7 +81,6 @@ protected:
     float m_avgConstant;
     float m_sampleRate;
     bool  m_forceAxisRedraw;
-    bool  m_complexMode;
     uint32_t m_smoothingLevel;
 
     QImage *m_bkbuffer;

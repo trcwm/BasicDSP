@@ -57,11 +57,14 @@ SpectrumWindow::SpectrumWindow(QWidget *parent) :
 
     // populate smoothing options
     ui->smoothingBox->addItem("None",0);
-    ui->smoothingBox->addItem("10 frames",0);
-    ui->smoothingBox->addItem("20 frames",0);
-    ui->smoothingBox->addItem("50 frames",0);
-    ui->smoothingBox->addItem("100 frames",0);
+    ui->smoothingBox->addItem("10 frames",1);
+    ui->smoothingBox->addItem("20 frames",2);
+    ui->smoothingBox->addItem("50 frames",3);
+    ui->smoothingBox->addItem("100 frames",4);
     ui->smoothingBox->setCurrentIndex(0);
+
+    ui->modeBox->addItem("2 channel",0);
+    ui->modeBox->addItem("IQ mode",1);
 }
 
 SpectrumWindow::~SpectrumWindow()
@@ -108,4 +111,18 @@ void SpectrumWindow::on_windowTypeBox_activated(int index)
 void SpectrumWindow::on_smoothingBox_activated(int index)
 {
     m_spectrum->setSmoothingLevel(index);
+}
+
+void SpectrumWindow::on_modeBox_activated(int index)
+{
+    switch(index)
+    {
+    default:
+    case 0: // regular 2-channel spectrum mode
+        m_spectrum->setMode(fft::MODE_NORMAL);
+        break;
+    case 1: // IQ mode
+        m_spectrum->setMode(fft::MODE_IQ);
+        break;
+    }
 }

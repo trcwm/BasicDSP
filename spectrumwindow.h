@@ -40,6 +40,8 @@ private slots:
 
     void on_smoothingBox_activated(int index);
 
+    void on_modeBox_activated(int index);
+
 private:
     Ui::SpectrumWindow *ui;
     SpectrumWidget      *m_spectrum;    
