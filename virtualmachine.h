@@ -149,15 +149,6 @@ public:
         return m_sampleRate;
     }
 
-#if 0
-    /** Get a sound device name by index */
-    QString getDeviceName(PaDeviceIndex idx) const;
-
-    /** Get a sound device index by name */
-    PaDeviceIndex getDeviceIndexByName(const QString &name, bool input) const;
-#endif
-
-
     struct ring_buffer_data_t
     {
         float s1;

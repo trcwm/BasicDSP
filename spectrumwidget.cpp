@@ -20,8 +20,7 @@ SpectrumWidget::SpectrumWidget(QWidget *parent)
       m_bkbuffer(0),
       m_avgConstant(0.0f),
       m_smoothingLevel(0),
-      m_forceAxisRedraw(true),
-      m_complexMode(false)
+      m_forceAxisRedraw(true)
 {
     m_dbmin = -65.0f;
     m_dbmax = 5.0f;
@@ -104,15 +103,16 @@ void SpectrumWidget::paintEvent(QPaintEvent *event)
         bpainter.fillRect(rect(), Qt::black);
 
         // calculate the frequency axis span
-        if (!m_complexMode)
+        switch(m_fft.getMode())
         {
+        case fft::MODE_NORMAL:
             m_fmin  = 0.0f;
             m_fmax  = m_sampleRate/2.0f;
-        }
-        else
-        {
+            break;
+        case fft::MODE_IQ:
             m_fmin  = -m_sampleRate/2.0f;
             m_fmax  = m_sampleRate/2.0f;
+            break;
         }
 
         // draw the horizontal divisions
@@ -188,25 +188,15 @@ void SpectrumWidget::paintEvent(QPaintEvent *event)
     }
     QPainter painter(this);
     painter.drawImage(rect(), *m_bkbuffer);
-    painter.setPen(Qt::yellow);
 
-    if (m_complexMode)
+    int32_t ypos_old;
+    int32_t xpos_old;
+    switch(m_fft.getMode())
     {
-        int32_t ypos_old = db2pix(m_dbData[0]);
-        int32_t xpos_old = 0;
-        for(uint32_t i=1; i<256; i++)
-        {
-            int32_t ypos = db2pix(m_dbData[i]);
-            int32_t xpos = x2pix(i);
-            painter.drawLine(xpos_old, ypos_old, xpos, ypos);
-            xpos_old = xpos;
-            ypos_old = ypos;
-        }
-    }
-    else
-    {
-        int32_t ypos_old = db2pix(m_dbData[0]);
-        int32_t xpos_old = 0;
+    case fft::MODE_NORMAL:
+        painter.setPen(Qt::yellow);
+        ypos_old = db2pix(m_dbData[0]);
+        xpos_old = 0;
         for(uint32_t i=1; i<128; i++)
         {
             int32_t ypos = db2pix(m_dbData[i]);
@@ -215,6 +205,47 @@ void SpectrumWidget::paintEvent(QPaintEvent *event)
             xpos_old = xpos;
             ypos_old = ypos;
         }
+        painter.setPen(Qt::green);
+        ypos_old = db2pix(m_dbData[128]);
+        xpos_old = 0;
+        for(uint32_t i=129; i<256; i++)
+        {
+            int32_t ypos = db2pix(m_dbData[i]);
+            int32_t xpos = x2pix(i-128);
+            painter.drawLine(xpos_old, ypos_old, xpos, ypos);
+            xpos_old = xpos;
+            ypos_old = ypos;
+        }
+        break;
+    case fft::MODE_IQ:
+        painter.setPen(Qt::cyan);
+        ypos_old = db2pix(m_dbData[0]);
+        xpos_old = x2pix(128);
+        // first, the positive half
+        // of the spectrum
+        for(uint32_t i=1; i<128; i++)
+        {
+            int32_t ypos = db2pix(m_dbData[i]);
+            int32_t xpos = x2pix(i+128);
+            painter.drawLine(xpos_old, ypos_old, xpos, ypos);
+            xpos_old = xpos;
+            ypos_old = ypos;
+        }
+        // then, the negative half..
+        ypos_old = db2pix(m_dbData[128]);
+        xpos_old = x2pix(0);
+        for(uint32_t i=1; i<128; i++)
+        {
+            int32_t ypos = db2pix(m_dbData[i+128]);
+            int32_t xpos = x2pix(i);
+            painter.drawLine(xpos_old, ypos_old, xpos, ypos);
+            xpos_old = xpos;
+            ypos_old = ypos;
+        }
+        // connect the two halves!
+        int32_t ypos = db2pix(m_dbData[0]);
+        int32_t xpos = x2pix(128);
+        painter.drawLine(xpos_old, ypos_old, xpos, ypos);
     }
 }
 
@@ -225,8 +256,14 @@ int32_t SpectrumWidget::db2pix(float db)
 
 int32_t SpectrumWidget::x2pix(float xvalue)
 {
-    if (m_complexMode)
-        return static_cast<int32_t>(xvalue/256.0f*width());
-    else
+    switch(m_fft.getMode())
+    {
+    default:
+    case fft::MODE_NORMAL:
         return static_cast<int32_t>(xvalue/128.0f*width());
+        break;
+    case fft::MODE_IQ:
+        return static_cast<int32_t>(xvalue/256.0f*width());
+        break;
+    }
 }

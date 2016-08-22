@@ -215,6 +215,8 @@ bool MainWindow::saveScriptFile(const QString &filePath)
 
     QTextStream stream(&file);
     stream << m_sourceEditor->toPlainText();
+    qDebug() << m_sourceEditor->toPlainText();
+    stream.flush();
     file.flush();
     file.close();
     m_filepath = filePath;
@@ -543,10 +545,16 @@ void MainWindow::on_action_Open_triggered()
         return;
     }
 
+    m_sourceEditor->clear();
     m_sourceEditor->setPlainText(file.readAll());
     m_sourceEditor->document()->setModified(false);
     file.close();
     m_filepath = filepath;
     m_lastDirectory = info.path();
     updateBasicDSPWindowTitle();
+}
+
+void MainWindow::on_actionClear_triggered()
+{
+    m_sourceEditor->clear();
 }

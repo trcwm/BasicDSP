@@ -23,6 +23,7 @@ SoundcardDialog::SoundcardDialog(QWidget *parent) :
             ui->outputComboBox->addItem(deviceName, QVariant(idx));
         }
     }
+    checkSupport();
 }
 
 SoundcardDialog::~SoundcardDialog()
@@ -120,4 +121,45 @@ float SoundcardDialog::getSamplerate()
         return 44100.0;
     }
     return rate;
+}
+
+void SoundcardDialog::checkSupport()
+{
+    // check if the selected device can do what we want
+    PaSampleFormat sampleFormat = paFloat32;
+    PaStreamParameters inputParams;
+    PaStreamParameters outputParams;
+
+    memset(&inputParams, 0, sizeof(inputParams));
+    inputParams.device = getInputSource();
+    inputParams.suggestedLatency = 0.2f;
+    inputParams.channelCount = 2;
+    inputParams.sampleFormat = sampleFormat;
+
+    memset(&outputParams, 0, sizeof(outputParams));
+    outputParams.device = getOutputSource();
+    outputParams.suggestedLatency = 0.2f;
+    outputParams.channelCount = 2;
+    outputParams.sampleFormat = sampleFormat;
+
+    PaError err = Pa_IsFormatSupported(&inputParams, &outputParams, getSamplerate());
+
+    if (err==paFormatIsSupported)
+    {
+        ui->warningText->setText("");
+    }
+    else
+    {
+        ui->warningText->setText("Format NOT supported");
+    }
+}
+
+void SoundcardDialog::on_inputComboBox_currentIndexChanged(int index)
+{
+    checkSupport();
+}
+
+void SoundcardDialog::on_outputComboBox_currentIndexChanged(int index)
+{
+    checkSupport();
 }
