@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <ostream>
 
 #include "tokenizer.h"
 
