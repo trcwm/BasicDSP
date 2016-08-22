@@ -225,11 +225,13 @@ bool VirtualMachine::start()
     memset(&inputParams, 0, sizeof(inputParams));
     inputParams.device = m_inDevice;
     inputParams.channelCount = 2;
+    inputParams.suggestedLatency = 0.2;
     inputParams.sampleFormat = sampleFormat;
 
     memset(&outputParams, 0, sizeof(outputParams));
     outputParams.device = m_outDevice;
     outputParams.channelCount = 2;
+    outputParams.suggestedLatency = 0.2;
     outputParams.sampleFormat = sampleFormat;
 
     PaError error = Pa_OpenStream(
