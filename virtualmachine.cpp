@@ -64,6 +64,11 @@ VirtualMachine::VirtualMachine(QMainWindow *guiWindow)
 {
     Pa_Initialize();
 
+    for(uint32_t i=0; i<4; i++)
+    {
+        m_monitorVar[i] = NULL;
+    }
+
     //TODO: get configuration of soundcard
     // from the registry or other
     // configuration file ..
@@ -79,7 +84,7 @@ VirtualMachine::VirtualMachine(QMainWindow *guiWindow)
        44100. The GUI thread must retrieve
        the data within this time.
 
-       The number of float must be a power
+       The number of floats must be a power
        of two!
     */
     for(uint32_t i=0; i<2; i++)
@@ -130,13 +135,38 @@ void VirtualMachine::init()
     }
 }
 
-PaUtilRingBuffer* VirtualMachine::getRingBufferPtr(uint32_t idx)
+PaUtilRingBuffer* VirtualMachine::getRingBufferPtr(uint32_t ringBufID)
 {
-    if (idx<2)
+    if (ringBufID<2)
     {
-        return &m_ringbuffer[idx];
+        return &m_ringbuffer[ringBufID];
     }
     return NULL;
+}
+
+bool VirtualMachine::setMonitoringVariable(uint32_t ringBufID, uint32_t channel, const std::string &varname)
+{
+    QMutexLocker lock(&m_controlMutex);
+
+    qDebug() << "setMonitoringVariable called";
+
+    if (ringBufID > 1)
+        return false;
+    if (channel > 1)
+        return false;
+
+    int32_t idx = VM::findVariableByName(m_vars, varname);
+    if (idx < 0)
+    {
+        // variable not found
+        m_monitorVar[ringBufID*2 + channel] = NULL;
+        return false;
+    }
+
+    qDebug() << "setMonitoringVariable " << varname.c_str();
+
+    m_monitorVar[ringBufID*2 + channel] = &(m_vars[idx].value);
+    return true;
 }
 
 void VirtualMachine::loadProgram(const VM::program_t &program, const VM::variables_t &variables)
@@ -371,11 +401,47 @@ void VirtualMachine::processSamples(float *inbuf, float *outbuf,
         // for now, write the Lout and Rout to the first two ring buffers
         // FIXME: don't call this per sample but do it in chunks to reduce
         // the overhead.
-        ring_buffer_data_t data;
-        data.s1 = outbuf[i<<1];
-        data.s2 = outbuf[(i<<1)+1];
-        PaUtil_WriteRingBuffer(&m_ringbuffer[0], &data, 1);
-        PaUtil_WriteRingBuffer(&m_ringbuffer[1], &data, 1);
+        ring_buffer_data_t scope;
+        ring_buffer_data_t spectrum;
+
+        if (m_monitorVar[0] != NULL)
+        {
+            scope.s1 = *m_monitorVar[0];
+        }
+        else
+        {
+            scope.s1 = 0;
+        }
+
+        if (m_monitorVar[1] != NULL)
+        {
+            scope.s2 = *m_monitorVar[1];
+        }
+        else
+        {
+            scope.s2 = 0;
+        }
+
+        if (m_monitorVar[2] != NULL)
+        {
+            spectrum.s1 = *m_monitorVar[2];
+        }
+        else
+        {
+            spectrum.s1 = 0;
+        }
+
+        if (m_monitorVar[3] != NULL)
+        {
+            spectrum.s2 = *m_monitorVar[3];
+        }
+        else
+        {
+            spectrum.s2 = 0;
+        }
+
+        PaUtil_WriteRingBuffer(&m_ringbuffer[0], &scope, 1);
+        PaUtil_WriteRingBuffer(&m_ringbuffer[1], &spectrum, 1);
     }
     m_controlMutex.unlock();
 }
@@ -553,9 +619,6 @@ void VirtualMachine::executeProgram(float inLeft, float inRight, float &outLeft,
             outRight = 0.0f;
         }
     }
-
-    //TODO: setup Portaudio non-blocking ring buffers
-    // to communicate variables to the GUI thread
 }
 
 void VirtualMachine::dump(std::ostream &s)

@@ -126,9 +126,12 @@ public:
     /** dump the (human readable) VM program to an output stream */
     void dump(std::ostream &s);
 
-    /** get a pointer to one of the four ring buffers
+    /** set monitoring variables for ring buffer */
+    bool setMonitoringVariable(uint32_t ringBufID, uint32_t channel, const std::string &varname);
+
+    /** get a pointer to one of the two ring buffers
         to allow the reading of data by the GUI thread */
-    PaUtilRingBuffer* getRingBufferPtr(uint32_t i);
+    PaUtilRingBuffer* getRingBufferPtr(uint32_t ringBufID);
 
     /** set the soundcard device parameters */
     void setupSoundcard(PaDeviceIndex inDevice, PaDeviceIndex outDevice,

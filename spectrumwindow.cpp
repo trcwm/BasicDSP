@@ -24,6 +24,18 @@ SpectrumWindow::SpectrumWindow(QWidget *parent) :
     m_spectrum = new SpectrumWidget(this);
     ui->mainLayout->addWidget(m_spectrum);
 
+    // setup channel boxes
+    m_hsizer = new QHBoxLayout(this);
+    ui->mainLayout->addLayout(m_hsizer);
+
+    m_chan1 = new QLineEdit(this);
+    m_chan2 = new QLineEdit(this);
+    m_hsizer->addWidget(m_chan1);
+    m_hsizer->addWidget(m_chan2);
+
+    connect(m_chan1, SIGNAL(textChanged(QString)), this, SLOT(chan1Changed()));
+    connect(m_chan2, SIGNAL(textChanged(QString)), this, SLOT(chan2Changed()));
+
     //populate window options
     ui->windowTypeBox->addItem("None", 0);
     ui->windowTypeBox->addItem("Hann", 1);
@@ -80,6 +92,27 @@ void SpectrumWindow::setSampleRate(float rate)
 void SpectrumWindow::submit256Samples(const VirtualMachine::ring_buffer_data_t *samples)
 {
     m_spectrum->submit256Samples(samples);
+}
+
+std::string SpectrumWindow::getChannelName(uint32_t channel)
+{
+    if (channel == 0)
+        return m_chan1->text().toStdString();
+
+    if (channel == 1)
+        return m_chan2->text().toStdString();
+
+    return std::string("");
+}
+
+void SpectrumWindow::chan1Changed()
+{
+    emit channelChanged(0);
+}
+
+void SpectrumWindow::chan2Changed()
+{
+    emit channelChanged(1);
 }
 
 void SpectrumWindow::on_windowTypeBox_activated(int index)

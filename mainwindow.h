@@ -27,6 +27,9 @@ public:
     ~MainWindow();
 
 private slots:
+    void scopeChannelChanged(uint32_t channel);
+    void spectrumChannelChanged(uint32_t channel);
+
     void on_actionExit_triggered();
     void on_GUITimer();
     void on_Slider1Changed(float value);

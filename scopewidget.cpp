@@ -94,9 +94,9 @@ void ScopeWidget::paintEvent(QPaintEvent *event)
         }
 
         // draw the x-axis
-        const float steps[] = {1.0e-3, 2.0e-3, 5.0e-3, 10.0e-3, 20.0e-3,
-                               50.0e-3, 100.0e-3,
-                               200.0e-3, 500e-3, 1, 2, 0};
+        const float steps[] = {1.0e-3f, 2.0e-3f, 5.0e-3f, 10.0e-3f, 20.0e-3f,
+                               50.0e-3f, 100.0e-3f,
+                               200.0e-3f, 500e-3f, 1.0f, 2.0f, 0.0f};
         uint32_t idx = 0;
         uint32_t labelWidth  = fm.width("XXXXXXXX");
         int maxLabels = width()/labelWidth;

@@ -14,6 +14,8 @@
 #define SPECTRUMWINDOW_H
 
 #include <QDialog>
+#include <QLineEdit>
+#include <QHBoxLayout>
 #include "spectrumwidget.h"
 #include "virtualmachine.h"
 
@@ -35,16 +37,28 @@ public:
     /** set the sample rate for correct frequency axis scaling */
     void setSampleRate(float rate);
 
+    /** get name of channel variable */
+    std::string getChannelName(uint32_t channel);
+
+signals:
+    void channelChanged(uint32_t channel);
+
 private slots:
+    void chan1Changed();
+    void chan2Changed();
+
     void on_windowTypeBox_activated(int index);
 
     void on_smoothingBox_activated(int index);
 
-    void on_modeBox_activated(int index);
+    void on_modeBox_activated(int index);    
 
 private:
     Ui::SpectrumWindow *ui;
-    SpectrumWidget      *m_spectrum;    
+    SpectrumWidget      *m_spectrum;
+    QHBoxLayout         *m_hsizer;
+    QLineEdit           *m_chan1;
+    QLineEdit           *m_chan2;
 };
 
 #endif // SPECTRUMWINDOW_H

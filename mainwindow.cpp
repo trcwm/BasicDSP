@@ -75,6 +75,9 @@ MainWindow::MainWindow(QWidget *parent) :
     m_scope = new ScopeWindow(this);
     //m_scope->show();
 
+    connect(m_scope, SIGNAL(channelChanged(uint32_t)), this, SLOT(scopeChannelChanged(uint32_t)));
+    connect(m_spectrum, SIGNAL(channelChanged(uint32_t)), this, SLOT(spectrumChannelChanged(uint32_t)));
+
     /** get the progam setting */
     readSettings();
 }
@@ -289,6 +292,20 @@ void MainWindow::on_GUITimer()
     m_spectrum->update();
 }
 
+void MainWindow::scopeChannelChanged(uint32_t channelID)
+{
+    qDebug() << "scopeChannelChanged() " << channelID;
+    std::string varname = m_scope->getChannelName(channelID);
+    m_machine->setMonitoringVariable(0, channelID, varname);
+}
+
+void MainWindow::spectrumChannelChanged(uint32_t channelID)
+{
+    qDebug() << "spectrumChannelChanged() " << channelID;
+    std::string varname = m_spectrum->getChannelName(channelID);
+    m_machine->setMonitoringVariable(1, channelID, varname);
+}
+
 void MainWindow::on_actionExit_triggered()
 {
     //TODO: check for unsaved things
@@ -384,6 +401,12 @@ void MainWindow::on_runButton_clicked()
             m_machine->setSlider(1, m_slider2->getValue());
             m_machine->setSlider(2, m_slider3->getValue());
             m_machine->setSlider(3, m_slider4->getValue());
+
+            m_machine->setMonitoringVariable(0,0,m_scope->getChannelName(0));
+            m_machine->setMonitoringVariable(0,1,m_scope->getChannelName(1));
+            m_machine->setMonitoringVariable(1,0,m_spectrum->getChannelName(0));
+            m_machine->setMonitoringVariable(1,1,m_spectrum->getChannelName(1));
+
             m_machine->start();
             qDebug() << ss.str().c_str();
             qDebug() << " - Variables -";
