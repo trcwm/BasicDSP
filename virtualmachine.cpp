@@ -15,6 +15,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <ostream>
 #include <algorithm>
 #include "virtualmachine.h"
 

@@ -1,4 +1,4 @@
-#-------------------------------------------------
+ #-------------------------------------------------
 #
 # Project created by QtCreator 2016-07-25T16:49:53
 #
@@ -58,7 +58,7 @@ win32 {
 
 ## linux make
 ## needs: libasound2-dev
-unix {
+unix:!macx {
     DEFINES += PA_USE_ALSA
 
     INCLUDEPATH += contrib/portaudio/src/os/unix
@@ -71,7 +71,23 @@ unix {
     LIBS += -lasound
 }
 
-## Todo: linux specific stuff, OSX specific stuff
+## OSX
+macx {
+    DEFINES -= __linux__
+    DEFINES += PA_USE_COREAUDIO
+
+    INCLUDEPATH += contrib/portaudio/src/hostapi/coreaudio
+    INCLUDEPATH += contrib/portaudio/src/os/unix
+
+    SOURCES += contrib/portaudio/src/hostapi/coreaudio/pa_mac_core.c \
+               contrib/portaudio/src/hostapi/coreaudio/pa_mac_core_blocking.c \
+               contrib/portaudio/src/hostapi/coreaudio/pa_mac_core_utilities.c \
+               contrib/portaudio/src/os/unix/pa_unix_util.c \
+               contrib/portaudio/src/os/unix/pa_unix_hostapis.c
+
+    LIBS += -framework CoreAudio -framework CoreServices
+    LIBS += -framework AudioUnit -framework AudioToolbox
+}
 
 ################################################################################
 # Kiss FFT stuff
