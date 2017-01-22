@@ -386,8 +386,8 @@ void VirtualMachine::processSamples(float *inbuf, float *outbuf,
             right = 0.0f;
         }
 
-        float left_abs = fabs(left*1000.0f);
-        float right_abs = fabs(right*1000.0f);
+        float left_abs = fabs(left);
+        float right_abs = fabs(right);
 
         if (left_abs > m_leftLevel)
         {

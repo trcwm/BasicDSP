@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QLineEdit>
+#include <QLabel>
 #include <QHBoxLayout>
 #include "virtualmachine.h"
 #include "scopewidget.h"
@@ -39,6 +40,8 @@ private:
 
     ScopeWidget *m_scope;
     QHBoxLayout *m_hsizer;
+    QLabel  	*m_chan1Label;
+    QLabel  	*m_chan2Label;
     QLineEdit   *m_chan1;
     QLineEdit   *m_chan2;
 };

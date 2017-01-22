@@ -5,7 +5,7 @@ ScopeWindow::ScopeWindow(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::ScopeWindow)
 {
-    setWindowFlags(Qt::WindowStaysOnTopHint | Qt::Tool);
+    setWindowFlags(Qt::Tool);
     ui->setupUi(this);
 
     m_scope = new ScopeWidget(this);
@@ -16,7 +16,15 @@ ScopeWindow::ScopeWindow(QWidget *parent) :
 
     m_chan1 = new QLineEdit(this);
     m_chan2 = new QLineEdit(this);
+    m_chan1Label = new QLabel(this);
+    m_chan2Label = new QLabel(this);
+    m_chan1Label->setText(" CH1 ");
+    m_chan2Label->setText(" CH2 ");
+    m_chan1Label->setStyleSheet("background-color: green");
+    m_chan2Label->setStyleSheet("background-color: yellow");
+    m_hsizer->addWidget(m_chan1Label);
     m_hsizer->addWidget(m_chan1);
+    m_hsizer->addWidget(m_chan2Label);
     m_hsizer->addWidget(m_chan2);
 
     connect(m_chan1, SIGNAL(textChanged(QString)), this, SLOT(chan1Changed()));

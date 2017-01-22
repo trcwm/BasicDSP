@@ -17,7 +17,7 @@ SpectrumWindow::SpectrumWindow(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SpectrumWindow)
 {
-    setWindowFlags(Qt::WindowStaysOnTopHint | Qt::Tool);
+    setWindowFlags(Qt::Tool);
     ui->setupUi(this);
 
     // setup spectrum display

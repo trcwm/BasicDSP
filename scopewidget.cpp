@@ -23,12 +23,81 @@ ScopeWidget::ScopeWidget(QWidget *parent)
     m_ymin = -1.1f;
     m_timespan = 100.0e-3f;
 
+    m_trigEnabled = true;
+    m_trigLevel = 0.0f;
+    m_trigChannel = 0;
+    m_trigSearch = false;
+    m_samplesStored = 0;
+
+    setTriggerState(true);
+
+    m_trigStorage.resize(256);
     m_signal.resize(256);
+}
+
+void ScopeWidget::setTriggerState(bool enabled)
+{
+    if (enabled)
+    {
+        m_trigSearch = true;
+        m_samplesStored = 0;
+        m_lastSample = 0.0f;
+    }
+    else
+    {
+        m_trigSearch = false;
+    }
+    m_trigEnabled = enabled;
 }
 
 void ScopeWidget::submit256Samples(VirtualMachine::ring_buffer_data_t *buffer)
 {
-    memcpy(&m_signal[0], buffer, sizeof(VirtualMachine::ring_buffer_data_t)*256);
+    // for triggering, we have to break the 256-sample boundaries
+    // therefore, we must keep track of whether we're searching
+    // for a trigger level crossing or whether we've just seen
+    // this happen and are storing data.
+
+    uint32_t idx = 0;   // search/read index
+    if (m_trigEnabled)
+    {
+        // search for trigger, or store the data
+        // if we've seen a trigger event
+        while(idx < 256)
+        {
+            if (m_trigSearch)
+            {
+                // search for trigger
+                if ((buffer[idx].s1 > m_trigLevel) && (m_lastSample < m_trigLevel))
+                {
+                    m_trigSearch = false;
+                }
+                m_lastSample = buffer[idx++].s1;
+            }
+            else
+            {
+                // store the samples if there is still room
+                if (m_samplesStored < 256)
+                {
+                    m_trigStorage[m_samplesStored++] = buffer[idx++];
+                }
+                else
+                {
+                    // we've filled the trigger storage
+                    // so we can copy it to the actual display buffer
+                    // and start a new search for the next trigger event
+                    memcpy(&m_signal[0], &m_trigStorage[0], sizeof(VirtualMachine::ring_buffer_data_t)*256);
+                    m_trigSearch = true;
+                    m_samplesStored = 0;
+                }
+            }
+        }
+    }
+    else
+    {
+        // no trigger, copy input directly
+        memcpy(&m_signal[0], buffer, sizeof(VirtualMachine::ring_buffer_data_t)*256);
+        m_trigSearch = false;
+    }
 }
 
 void ScopeWidget::setSampleRate(float rate)
