@@ -399,9 +399,6 @@ void VirtualMachine::processSamples(float *inbuf, float *outbuf,
         }
         executeProgram(left, right, outbuf[i<<1], outbuf[(i<<1)+1]);
 
-        // for now, write the Lout and Rout to the first two ring buffers
-        // FIXME: don't call this per sample but do it in chunks to reduce
-        // the overhead.
         ring_buffer_data_t scope;
         ring_buffer_data_t spectrum;
 

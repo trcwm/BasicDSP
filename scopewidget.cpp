@@ -33,6 +33,8 @@ ScopeWidget::ScopeWidget(QWidget *parent)
 
     m_trigStorage.resize(256);
     m_signal.resize(256);
+
+    setMinimumSize(300,200);
 }
 
 void ScopeWidget::setTriggerState(bool enabled)
@@ -67,11 +69,23 @@ void ScopeWidget::submit256Samples(VirtualMachine::ring_buffer_data_t *buffer)
             if (m_trigSearch)
             {
                 // search for trigger
-                if ((buffer[idx].s1 > m_trigLevel) && (m_lastSample < m_trigLevel))
+                float v;
+                if (m_trigChannel == 0)
+                {
+                    v = buffer[idx].s1;
+                }
+                else
+                {
+                    v = buffer[idx].s2;
+                }
+
+                if ((v > m_trigLevel) && (m_lastSample < m_trigLevel))
                 {
                     m_trigSearch = false;
+                    m_trigStorage[m_samplesStored++] = buffer[idx];
                 }
-                m_lastSample = buffer[idx++].s1;
+                idx++;
+                m_lastSample = v;
             }
             else
             {

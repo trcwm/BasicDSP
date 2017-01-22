@@ -5,6 +5,10 @@
 #include <QLineEdit>
 #include <QLabel>
 #include <QHBoxLayout>
+#include <QGroupBox>
+#include <QRadioButton>
+#include <QSpinBox>
+
 #include "virtualmachine.h"
 #include "scopewidget.h"
 
@@ -34,16 +38,23 @@ signals:
 private slots:
     void chan1Changed();
     void chan2Changed();
+    void triggerChanged();
+    void triggerLevelChanged(int);
 
 private:
     Ui::ScopeWindow *ui;
 
+    QGroupBox *createTriggerLevelGroup();
+    QGroupBox *createTriggerChannelGroup();
+
     ScopeWidget *m_scope;
-    QHBoxLayout *m_hsizer;
-    QLabel  	*m_chan1Label;
-    QLabel  	*m_chan2Label;
     QLineEdit   *m_chan1;
     QLineEdit   *m_chan2;
+
+    QRadioButton *m_trigNone;
+    QRadioButton *m_trigCh1;
+    QRadioButton *m_trigCh2;
+    QSpinBox     *m_triggerSpin;
 };
 
 #endif // SCOPEWINDOW_H
