@@ -4,13 +4,14 @@
 #include <QFileDialog>
 #include <QMessageBox>
 
+#include "ui_mainwindow.h"
+
 #include <sstream>
 #include "reader.h"
 #include "tokenizer.h"
 #include "parser.h"
 #include "asttovm.h"
 #include "mainwindow.h"
-#include "ui_mainwindow.h"
 #include "pa_ringbuffer.h"
 #include "portaudio_helper.h"
 #include "soundcarddialog.h"
@@ -69,11 +70,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     /** create a spectrum window */
     m_spectrum = new SpectrumWindow(this);
-    //m_spectrum->show();
+
 
     /** create a scope window */
     m_scope = new ScopeWindow(this);
-    //m_scope->show();
 
     connect(m_scope, SIGNAL(channelChanged(uint32_t)), this, SLOT(scopeChannelChanged(uint32_t)));
     connect(m_spectrum, SIGNAL(channelChanged(uint32_t)), this, SLOT(spectrumChannelChanged(uint32_t)));
@@ -306,40 +306,34 @@ void MainWindow::spectrumChannelChanged(uint32_t channelID)
     m_machine->setMonitoringVariable(1, channelID, varname);
 }
 
-void MainWindow::on_actionExit_triggered()
+bool MainWindow::compileAndRun()
 {
-    //TODO: check for unsaved things
-    //      quit any running threads.
-
-    close();
-}
-
-void MainWindow::on_runButton_clicked()
-{
-    if (m_machine->isRunning())
-    {
-        ui->runButton->setText("Run");
-        m_machine->stop();
-        return;
-    }
-
     Parser    parser;
     Tokenizer tokenizer;
 
-    Reader *reader = Reader::create(m_sourceEditor->toPlainText());
-    if (reader == 0)
+    if (m_machine->isRunning())
+        m_machine->stop();
+
+    QScopedPointer<Reader> reader(Reader::create(m_sourceEditor->toPlainText()));
+    if (reader.isNull())
     {
         // error, probably due to an empty source code editor
-        qDebug() << "Error: no source code";
-        return;
+        ui->statusBar->showMessage("Error: no source code?");
+        return false;
     }
 
     std::vector<token_t> tokens;
-    bool ok = tokenizer.process(reader, tokens);
+    bool ok = tokenizer.process(reader.data(), tokens);
     if (!ok)
     {
         // tokenize error
-        qDebug() << "Tokenizer error: " << tokenizer.getErrorString().c_str();
+        QString errstr("Tokenizer error: ");
+        errstr.append(tokenizer.getErrorString().c_str());
+        ui->statusBar->showMessage(errstr);
+
+        Reader::position_info pos = tokenizer.getErrorPosition();
+        m_sourceEditor->setErrorLine(pos.line+1);
+        return false;
     }
     else
     {
@@ -355,7 +349,6 @@ void MainWindow::on_runButton_clicked()
     statements_t statements;
     bool parseOK = parser.process(tokens, statements);
 
-
     // write AST to the debug console
     qDebug() << "-- PARSE TREE -- ";
     std::stringstream ss;
@@ -365,7 +358,6 @@ void MainWindow::on_runButton_clicked()
     }
     qDebug() << ss.str().c_str();
 
-
     if (!parseOK)
     {
         Reader::position_info pos = parser.getLastErrorPos();
@@ -373,6 +365,7 @@ void MainWindow::on_runButton_clicked()
         txt.append(parser.getLastError().c_str());
         ui->statusBar->showMessage(txt);
         m_sourceEditor->setErrorLine(pos.line+1);
+        return false;
     }
     else
     {
@@ -380,12 +373,12 @@ void MainWindow::on_runButton_clicked()
         m_sourceEditor->setErrorLine(0);
     }
 
-
     VM::program_t program;
     VM::variables_t vars;
     if (!ASTToVM::process(statements, program, vars))
     {
         qDebug() << "AST conversion failed! :(";
+        return false;
     }
     else
     {
@@ -414,8 +407,48 @@ void MainWindow::on_runButton_clicked()
             {
                 qDebug() << vars[i].name.c_str();
             }
-            ui->runButton->setText("Stop");
+            return true;
         }
+    }
+    return false;
+}
+
+void MainWindow::on_actionExit_triggered()
+{
+    //TODO: check for unsaved things
+    //      quit any running threads.
+
+    close();
+}
+
+void MainWindow::on_runButton_clicked()
+{
+    // sanity
+    if (m_machine == 0)
+        return;
+
+    if (!m_machine->isRunning())
+    {
+        // user pressed RUN
+        bool ok = compileAndRun();
+        if (ok)
+        {
+            ui->runButton->setText("Stop");
+            ui->recompileButton->setEnabled(true);
+        }
+        else
+        {
+            // compile failed, don't run
+            ui->runButton->setText("Run");
+            ui->recompileButton->setEnabled(false);
+        }
+    }
+    else
+    {
+        // user pressed STOP
+        ui->runButton->setText("Run");
+        ui->recompileButton->setEnabled(false);
+        m_machine->stop();
     }
 }
 
@@ -457,17 +490,45 @@ void MainWindow::on_SourceChanged()
         return;
 
     if (ui->inputAudioFile->isChecked())
+    {
         m_machine->setSource(VirtualMachine::SRC_WAV);
+        ui->freqLineEdit->setEnabled(false);
+        ui->freqSlider->setEnabled(false);
+    }
     if (ui->inputSineWave->isChecked())
+    {
         m_machine->setSource(VirtualMachine::SRC_SINE);
+        ui->freqLineEdit->setValidator(new QDoubleValidator(0,m_machine->getSamplerate(),3));
+        ui->freqSlider->setRange(0,m_machine->getSamplerate());
+        ui->freqLineEdit->setEnabled(true);
+        ui->freqSlider->setEnabled(true);
+    }
     if (ui->inputQuadSine->isChecked())
+    {
         m_machine->setSource(VirtualMachine::SRC_QUADSINE);
+        ui->freqLineEdit->setValidator(new QDoubleValidator(-m_machine->getSamplerate()/2,m_machine->getSamplerate()/2,3));
+        ui->freqSlider->setRange(-m_machine->getSamplerate()/2,m_machine->getSamplerate()/2);
+        ui->freqLineEdit->setEnabled(true);
+        ui->freqSlider->setEnabled(true);
+    }
     if (ui->inputWhiteNoise->isChecked())
+    {
         m_machine->setSource(VirtualMachine::SRC_NOISE);
+        ui->freqLineEdit->setEnabled(false);
+        ui->freqSlider->setEnabled(false);
+    }
     if (ui->inputImpulse->isChecked())
+    {
         m_machine->setSource(VirtualMachine::SRC_IMPULSE);
+        ui->freqLineEdit->setEnabled(false);
+        ui->freqSlider->setEnabled(false);
+    }
     if (ui->inputSoundcard->isChecked())
+    {
         m_machine->setSource(VirtualMachine::SRC_SOUNDCARD);
+        ui->freqLineEdit->setEnabled(false);
+        ui->freqSlider->setEnabled(false);
+    }
 }
 
 void MainWindow::on_actionSoundcard_triggered()
@@ -580,4 +641,40 @@ void MainWindow::on_action_Open_triggered()
 void MainWindow::on_actionClear_triggered()
 {
     m_sourceEditor->clear();
+}
+
+void MainWindow::on_recompileButton_clicked()
+{
+    // user pressed RUN
+    bool ok = compileAndRun();
+    if (ok)
+    {
+        ui->runButton->setText("Stop");
+        ui->recompileButton->setEnabled(true);
+    }
+    else
+    {
+        // compile failed, don't run
+        ui->runButton->setText("Run");
+        ui->recompileButton->setEnabled(false);
+    }
+}
+
+void MainWindow::on_freqLineEdit_editingFinished()
+{
+    bool ok;
+    QString valstr = ui->freqLineEdit->text();
+    double value = valstr.toDouble(&ok);
+    if (ok)
+    {
+        ui->freqSlider->setValue((int)value);
+        m_machine->setFrequency(value);
+    }
+}
+
+void MainWindow::on_freqSlider_valueChanged(int value)
+{
+    QString num= QString::number(value);
+    ui->freqLineEdit->setText(num);
+    m_machine->setFrequency(value);
 }

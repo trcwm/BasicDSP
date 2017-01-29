@@ -129,6 +129,9 @@ void VirtualMachine::init()
     m_leftLevel = 0.0f;
     m_rightLevel = 0.0f;
 
+    m_phaseaccu = 0.0f;
+    m_freq = 0.0f;
+
     // flush the data in the ring buffers
     for(uint32_t i=0; i<2; i++)
     {
@@ -327,6 +330,12 @@ void VirtualMachine::setSource(src_t source)
     m_source = source;
 }
 
+void VirtualMachine::setFrequency(double Hz)
+{
+    QMutexLocker locker(&m_controlMutex);
+    m_freq = Hz;
+}
+
 void VirtualMachine::processSamples(float *inbuf, float *outbuf,
                                     uint32_t framesPerBuffer)
 {
@@ -374,12 +383,31 @@ void VirtualMachine::processSamples(float *inbuf, float *outbuf,
             right = -1.0f+2.0f*static_cast<float>(rand())/RAND_MAX;
             break;
         case SRC_SINE:
-            left = 0.0f;
-            right = 0.0f;
+            left = cos(2.0f*3.1415927f*m_phaseaccu);
+            right = left;
+            m_phaseaccu += (m_freq / m_sampleRate);
+            if (m_phaseaccu > 1.0f)
+            {
+                m_phaseaccu -= 1.0f;
+            }
+            else if (m_phaseaccu < 0.0f)
+            {
+                // safety check
+                m_phaseaccu = 0.0f;
+            }
             break;
         case SRC_QUADSINE:
-            left = 0.0f;
-            right = 0.0f;
+            left = cos(2.0f*3.1415927f*m_phaseaccu);
+            right = sin(2.0f*3.1415927f*m_phaseaccu);
+            m_phaseaccu += (m_freq / m_sampleRate);
+            if (m_phaseaccu > 1.0f)
+            {
+                m_phaseaccu -= 1.0f;
+            }
+            else if (m_phaseaccu < -1.0f)
+            {
+                m_phaseaccu += 1.0f;
+            }
             break;
         case SRC_IMPULSE:
             left = 0.0f;

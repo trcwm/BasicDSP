@@ -144,3 +144,6 @@ FORMS    += mainwindow.ui \
     spectrumwindow.ui \
     scopewindow.ui \
     soundcarddialog.ui
+
+RESOURCES += \
+    resources.qrc

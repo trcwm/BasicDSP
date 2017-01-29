@@ -27,9 +27,6 @@ public:
     ~MainWindow();
 
 private slots:
-    void scopeChannelChanged(uint32_t channel);
-    void spectrumChannelChanged(uint32_t channel);
-
     void on_actionExit_triggered();
     void on_GUITimer();
     void on_Slider1Changed(float value);
@@ -53,6 +50,15 @@ private slots:
     void on_action_Open_triggered();
 
     void on_actionClear_triggered();
+
+    void on_recompileButton_clicked();
+
+    void scopeChannelChanged(uint32_t channel);
+    void spectrumChannelChanged(uint32_t channel);
+
+    void on_freqLineEdit_editingFinished();
+
+    void on_freqSlider_valueChanged(int value);
 
 protected:
     virtual void closeEvent(QCloseEvent *event);
@@ -90,6 +96,9 @@ private:
         filename information.
     */
     void updateBasicDSPWindowTitle();
+
+    /** compile the program */
+    bool compileAndRun();
 
     Ui::MainWindow *ui;
 

@@ -13,7 +13,7 @@ ScopeWindow::ScopeWindow(QWidget *parent) :
     m_scope = new ScopeWidget(this);
     ui->mainLayout->addWidget(m_scope, 1);
 
-    QHBoxLayout* m_hsizer = new QHBoxLayout(this);
+    QHBoxLayout* m_hsizer = new QHBoxLayout();
 
     m_chan1 = new QLineEdit(this);
     m_chan2 = new QLineEdit(this);
@@ -32,7 +32,7 @@ ScopeWindow::ScopeWindow(QWidget *parent) :
     connect(m_chan1, SIGNAL(textChanged(QString)), this, SLOT(chan1Changed()));
     connect(m_chan2, SIGNAL(textChanged(QString)), this, SLOT(chan2Changed()));
 
-    QHBoxLayout *triggerLayout = new QHBoxLayout(this);
+    QHBoxLayout *triggerLayout = new QHBoxLayout();
 
     // create trigger channel selection
     QGroupBox *gb = createTriggerChannelGroup();

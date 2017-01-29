@@ -25,7 +25,7 @@ SpectrumWindow::SpectrumWindow(QWidget *parent) :
     ui->mainLayout->addWidget(m_spectrum);
 
     // setup channel boxes
-    m_hsizer = new QHBoxLayout(this);
+    m_hsizer = new QHBoxLayout();
     ui->mainLayout->addLayout(m_hsizer);
 
     m_chan1 = new QLineEdit(this);

@@ -9,6 +9,7 @@
 
 */
 
+#include <sstream>
 #include "virtualmachine.h"
 #include "tokenizer.h"
 
@@ -122,7 +123,7 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
                 continue;
             }
 
-            // check for a line-spannign comment
+            // check for a line-spanning comment
             if (c == '%')
             {
                 r->accept();
@@ -252,8 +253,14 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
             }
             else
             {
-                // unknown token!
-                m_lastError = std::string("Unknown token");
+                // unknown token character!
+                std::stringstream ss;
+                ss << "Unknown character: ";
+                ss << tok.txt;
+                ss << c;
+                ss << " on line: " << tok.pos.line+1 << " column " << tok.pos.pos+1;
+                m_lastError = ss.str();
+                m_lastErrorPos = tok.pos;
                 return false;
             }
             break;
@@ -361,6 +368,7 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
             {
                 // ill-formatted floating point!
                 m_lastError = std::string("Floating point has ill-formatted exponent!");
+                m_lastErrorPos = tok.pos;
                 return false;
             }
             break;
@@ -394,6 +402,8 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
             break;
         default:
             tok.tokID = TOK_UNKNOWN;
+            m_lastError = std::string("Unknown token found.");
+            m_lastErrorPos = tok.pos;
             return false;
         }
     }

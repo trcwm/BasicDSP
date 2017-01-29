@@ -123,6 +123,9 @@ public:
     enum src_t {SRC_SOUNDCARD, SRC_NOISE, SRC_SINE, SRC_QUADSINE, SRC_WAV, SRC_IMPULSE};
     void setSource(src_t source);
 
+    /** set the frequency for the sine or quadsine generator in Hertz */
+    void setFrequency(double Hz);
+
     /** dump the (human readable) VM program to an output stream */
     void dump(std::ostream &s);
 
@@ -203,6 +206,9 @@ protected:
     float   *m_in;              // pointer to mono IN variable
     float   *m_out;             // pointer to mono OUT variable
     float   *m_slider[4];       // pointers to slider variables
+
+    float   m_freq;             // sine or quadsine frequency (in Hz)
+    float   m_phaseaccu;        // phase accumulator [0..1) for frequency generator
 
     // variables to send to spectrum & scope displays
     // can be NULL if nothing is selected

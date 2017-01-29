@@ -1,16 +1,26 @@
 #include "mainwindow.h"
 #include <QApplication>
+#include <QPixmap>
+#include <QThread>
+#include <QSplashScreen>
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
+    QApplication app(argc, argv);
 
     QCoreApplication::setOrganizationName("MoseleyInstruments");
     QCoreApplication::setOrganizationDomain("www.moseleyinstruments.com");
     QCoreApplication::setApplicationName("BasicDSP");
 
-    MainWindow w;
-    w.show();
+    QPixmap pixmap(":/images/logo.png");
+    QSplashScreen splash(pixmap);
+    splash.show();
+    app.processEvents();
+    QThread::msleep(1000);
 
-    return a.exec();
+    MainWindow w;
+    w.show();    
+    splash.finish(&w);
+
+    return app.exec();
 }

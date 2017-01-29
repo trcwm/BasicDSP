@@ -67,6 +67,12 @@ public:
     return m_lastError;
   }
 
+  /** return the last error position */
+  Reader::position_info getErrorPosition() const
+  {
+      return m_lastErrorPos;
+  }
+
   //OBSOLETE: void dumpTokens(std::ostream &stream, const std::vector<token_t> &tokens);
 
 protected:
@@ -97,6 +103,7 @@ protected:
 
   std::string                   m_lastError;
   std::vector<functionInfo_t>   m_functions;
+  Reader::position_info         m_lastErrorPos;
 };
 
 
