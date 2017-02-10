@@ -22,7 +22,8 @@ const functionInfo_t g_functionDefs[] =
     {"tan",P_tan,1},
     {"tanh",P_tanh,1},
     {"pow",P_pow,2},
-    {"limit",P_limit,1}
+    {"limit",P_limit,1},
+    {"atan2",P_atan2,2}
 };
 
 int32_t functionDefs::getNumberOfArguments(uint32_t functionID)

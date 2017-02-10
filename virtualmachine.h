@@ -46,6 +46,7 @@
 #define P_tanh  109
 #define P_pow   110
 #define P_limit 111
+#define P_atan2 112
 
 //#define P_print 102
 

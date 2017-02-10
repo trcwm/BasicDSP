@@ -20,6 +20,7 @@ Note: there are still few missing features. Please be patient while we implement
 * sqrt(x) - returns the square root of x
 * pow(x,y) - returns x^y
 * abs(x) - returns the absolute value of x
+* [atan2(y,x)](https://en.wikipedia.org/wiki/Atan2) - returns the arctangent of (y/x)
 
 ### Variables
 * inl - left input channel

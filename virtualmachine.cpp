@@ -610,6 +610,10 @@ void VirtualMachine::executeProgram(float inLeft, float inRight, float &outLeft,
                 stack[sp-1]=std::min(stack[sp-1],1.0f);
                 stack[sp-1]=std::max(stack[sp-1],-1.0f);
                 break;
+            case P_atan2:
+                sp--;
+                stack[sp-1]=atan2(stack[sp-1],stack[sp]);
+                break;
             default:
                 // TODO: produce error
                 break;
