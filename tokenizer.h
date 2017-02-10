@@ -95,14 +95,7 @@ protected:
                     S_COMMENT,
                     S_DONE};
 
-  struct functionInfo_t
-  {
-      std::string   name;   // function name
-      uint32_t      ID;     // function ID
-  };
-
   std::string                   m_lastError;
-  std::vector<functionInfo_t>   m_functions;
   Reader::position_info         m_lastErrorPos;
 };
 

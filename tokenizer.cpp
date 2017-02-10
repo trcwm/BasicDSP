@@ -1,34 +1,39 @@
 /*
 
-  FPTOOL - a fixed-point math to VHDL generation tool
+  BasicDSP - tokenizer
 
   Description:  The tokenizer takes input from a
                 source reader and produces a
                 list of tokens that can be
                 fed into a parser.
 
+  Copyright Niels A. Moseley (c) 2016,2017.
+
 */
 
 #include <sstream>
 #include "virtualmachine.h"
+#include "functiondefs.h"
 #include "tokenizer.h"
 
 Tokenizer::Tokenizer()
 {
+#if 0
     // define the keywords
     // must be lower case!
-    m_functions.push_back(functionInfo_t{"sin",P_sin});
-    m_functions.push_back(functionInfo_t{"cos",P_cos});
-    m_functions.push_back(functionInfo_t{"sin1",P_sin1});
-    m_functions.push_back(functionInfo_t{"cos1",P_cos1});
-    m_functions.push_back(functionInfo_t{"mod1",P_mod1});
-    m_functions.push_back(functionInfo_t{"abs",P_abs});
-    m_functions.push_back(functionInfo_t{"round",P_round});
-    m_functions.push_back(functionInfo_t{"sqrt",P_sqrt});
-    m_functions.push_back(functionInfo_t{"tan",P_tan});
-    m_functions.push_back(functionInfo_t{"tanh",P_tanh});
-    m_functions.push_back(functionInfo_t{"pow",P_pow});
-    m_functions.push_back(functionInfo_t{"limit",P_limit});
+    m_functions.push_back(functionInfo_t{"sin",P_sin,1});
+    m_functions.push_back(functionInfo_t{"cos",P_cos,1});
+    m_functions.push_back(functionInfo_t{"sin1",P_sin1,1});
+    m_functions.push_back(functionInfo_t{"cos1",P_cos1,1});
+    m_functions.push_back(functionInfo_t{"mod1",P_mod1,1});
+    m_functions.push_back(functionInfo_t{"abs",P_abs,1});
+    m_functions.push_back(functionInfo_t{"round",P_round,1});
+    m_functions.push_back(functionInfo_t{"sqrt",P_sqrt,1});
+    m_functions.push_back(functionInfo_t{"tan",P_tan,1});
+    m_functions.push_back(functionInfo_t{"tanh",P_tanh,1});
+    m_functions.push_back(functionInfo_t{"pow",P_pow,2});
+    m_functions.push_back(functionInfo_t{"limit",P_limit,1});
+#endif
 }
 
 bool Tokenizer::isDigit(char c) const
@@ -287,12 +292,12 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
             {
                 // check if it is a keyword
                 bool found = false;
-                for(size_t i=0; i<m_functions.size(); i++)
+                for(size_t i=0; i<g_functionDefsLen; i++)
                 {
-                    if (m_functions[i].name == tok.txt)
+                    if (g_functionDefs[i].name == tok.txt)
                     {
                         // keyword found!
-                        tok.tokID = m_functions[i].ID;
+                        tok.tokID = g_functionDefs[i].ID;
                         result.push_back(tok);
                         found = true;
                         continue;

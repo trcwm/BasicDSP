@@ -44,6 +44,13 @@ bool ASTToVM::convertNode(ASTNode *node,
         convertNode(node->right, program, variables);
     }
 
+    // push arguments of functions here!
+    uint32_t nargs = node->function_args.size();
+    for(uint32_t i=0; i<nargs; i++)
+    {
+        convertNode(node->function_args[i], program, variables);
+    }
+
     VM::variable_t var;
     VM::instruction_t instr;
     int32_t idx;

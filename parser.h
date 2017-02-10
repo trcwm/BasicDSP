@@ -65,6 +65,10 @@ public:
             delete left;
         if (right != 0)
             delete right;
+        for(uint32_t i=0; i<function_args.size(); i++)
+        {
+            delete function_args[i];
+        }
     }
 
     void dump(std::ostream &stream, uint32_t level = 0)
@@ -132,6 +136,9 @@ public:
 
     ASTNode  *left;
     ASTNode  *right;
+
+    // function arguments go here instead of the left and right pointers!
+    std::vector<ASTNode *> function_args;
 };
 
 typedef std::vector<ASTNode*> statements_t;

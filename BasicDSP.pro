@@ -121,6 +121,7 @@ SOURCES += main.cpp\
         scopewidget.cpp\
         codeeditor.cpp\
         mainwindow.cpp\
+        functiondefs.cpp\
         soundcarddialog.cpp
 
 HEADERS  += mainwindow.h\
@@ -139,6 +140,7 @@ HEADERS  += mainwindow.h\
             scopewindow.h\
             scopewidget.h \
             codeeditor.h\
+            functiondefs.h\
             soundcarddialog.h
 
 FORMS    += mainwindow.ui \

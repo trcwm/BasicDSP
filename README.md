@@ -5,10 +5,10 @@
 
 BasicDSP is an educational program that lets users experiment with simple Digital Signal Processing (DSP) algorithms.
 
-Note: there are still few missing features. Please be patient as we implement those and fix bugs.
+Note: there are still few missing features. Please be patient while we implement those and fix bugs.
 
 ### Commands
-* mod1(x) - returns the remainer for a division by one.
+* mod1(x) - returns the remainer of a division by one.
 * sin1(x) - returns sin(2*pi*x)
 * cos1(x) - returns cos(2*pi*x)
 * sin(x) - returns sin(x), where x is in radians

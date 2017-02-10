@@ -4,15 +4,20 @@
                 checks the grammar and produces
                 a parse tree.
 
-  Author: Niels A. Moseley (c) 2016
+  Author: Niels A. Moseley (c) 2016,2017
 
 */
 
 #include <iostream>
+#include "functiondefs.h"
 #include "parser.h"
 
 Parser::Parser() : m_tokens(NULL)
 {
+    m_lastErrorPos.line=0;
+    m_lastErrorPos.offset=0;
+    m_lastErrorPos.pos=0;
+    m_lastError = std::string("Unknown error");
 }
 
 void Parser::error(const state_t &s, const std::string &txt)
@@ -467,29 +472,59 @@ ASTNode* Parser::acceptFactor1(state_t &s)
         return NULL;
     }
 
-    // TODO:
-    // FIXME:
-    // add functions with more than one argument
-    ASTNode *exprNode = 0;
-    if ((exprNode=acceptExpr(s)) == NULL)
-    {
-        s = savestate;
-        return NULL;
-    }
-    if (!match(s, TOK_RPAREN))
-    {
-        delete exprNode;
-        s = savestate;
-        return NULL;
-    }
+    // check how many argument this function expects
 
-    // lookup the function in the function list
+    uint32_t nargs = functionDefs::getNumberOfArguments(func.tokID);
+    if (nargs == -1)
+    {
+        // function not found!
+        // this is a severe error because the tokenizer recognized
+        // the function but for some reason we can't find it
+        // here anymore.. !?!
+        error(s, "Internal parser error: cannot find function!");
+        return NULL;
+    }
 
     ASTNode* factorNode = new ASTNode(ASTNode::NodeFunction);
     factorNode->info.txt = func.txt;
     factorNode->functionID = func.tokID;
     factorNode->left = 0;
-    factorNode->right = exprNode;
+    factorNode->right = 0;
+
+    uint32_t argcnt = 0;
+    while(argcnt < nargs)
+    {
+        ASTNode *exprNode = 0;
+        if ((exprNode=acceptExpr(s)) == NULL)
+        {
+            error(s,"Invalid argument or number of arguments");
+            s = savestate;
+            delete factorNode;
+            return NULL;
+        }
+        factorNode->function_args.push_back(exprNode);
+        argcnt++;
+
+        // if there are arguments left, we need to see a comma
+        if (argcnt != nargs)
+        {
+            if (!match(s, TOK_COMMA))
+            {
+                error(s,"Expected a comma in arguments list");
+                s = savestate;
+                delete factorNode;
+                return NULL;
+            }
+        }
+    }
+
+    if (!match(s, TOK_RPAREN))
+    {
+        delete factorNode;
+        s = savestate;
+        return NULL;
+    }
+
     return factorNode;
 }
 

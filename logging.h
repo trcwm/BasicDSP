@@ -1,10 +1,10 @@
 /*
 
-  FPTOOL - a fixed-point math to VHDL generation tool
+  BasicDSP logging functions
 
   Description:  logging system
 
-  Author: Niels A. Moseley
+  Copyright: Niels A. Moseley 2016,2017
 
 */
 
