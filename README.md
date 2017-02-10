@@ -21,6 +21,7 @@ Note: there are still few missing features. Please be patient while we implement
 * pow(x,y) - returns x^y
 * abs(x) - returns the absolute value of x
 * [atan2(y,x)](https://en.wikipedia.org/wiki/Atan2) - returns the arctangent of (y/x)
+* sign(x) - returns 1 if x>=0 and -1 if x<0.
 
 ### Variables
 * inl - left input channel

@@ -632,6 +632,12 @@ void VirtualMachine::executeProgram(float inLeft, float inRight, float &outLeft,
                 sp--;
                 stack[sp-1]=atan2(stack[sp-1],stack[sp]);
                 break;
+            case P_sign:
+                if (stack[sp-1] >= 0.0f)
+                    stack[sp-1]=1.0f;
+                else
+                    stack[sp-1]=-1.0f;
+                break;
             default:
                 // TODO: produce error
                 break;
