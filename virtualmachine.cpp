@@ -597,9 +597,10 @@ void VirtualMachine::executeProgram(float inLeft, float inRight, float &outLeft,
                 stack[sp-1]=sqrt(stack[sp-1]);
                 break;
             case P_round:
-                sp--;
-                if (stack[sp]!=0.0f)
-                    stack[sp-1]=stack[sp]*round(stack[sp-1]/stack[sp]);
+                //sp--;
+                //if (stack[sp]!=0.0f)
+                //    stack[sp-1]=stack[sp]*round(stack[sp-1]/stack[sp]);
+                stack[sp-1]=round(stack[sp-1]);
                 break;
             case P_pow:
                 sp--;
