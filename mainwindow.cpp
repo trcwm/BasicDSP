@@ -3,6 +3,7 @@
 #include <QFontDialog>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QSplashScreen>
 
 #include "ui_mainwindow.h"
 
@@ -15,6 +16,7 @@
 #include "pa_ringbuffer.h"
 #include "portaudio_helper.h"
 #include "soundcarddialog.h"
+#include "aboutdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -117,6 +119,7 @@ void MainWindow::readSettings()
     }
 
     m_lastDirectory = m_settings.value("lastdir", "").toString();
+    m_lastAudioDirectory = m_settings.value("lastaudiodir","").toString();
 }
 
 void MainWindow::writeSettings()
@@ -130,6 +133,7 @@ void MainWindow::writeSettings()
     m_settings.setValue("mainwindow/size", size());
 
     m_settings.setValue("lastdir", m_lastDirectory);
+    m_settings.setValue("lastaudiodir", m_lastAudioDirectory);
 }
 
 bool MainWindow::save()
@@ -413,6 +417,12 @@ bool MainWindow::compileAndRun()
     return false;
 }
 
+QString MainWindow::openAudioFile()
+{
+    return  QFileDialog::getOpenFileName(this,
+        tr("Open audio file"), m_lastAudioDirectory, tr("Audio Files (*.wav)"));
+}
+
 void MainWindow::on_actionExit_triggered()
 {
     //TODO: check for unsaved things
@@ -677,4 +687,29 @@ void MainWindow::on_freqSlider_valueChanged(int value)
     QString num= QString::number(value);
     ui->freqLineEdit->setText(num);
     m_machine->setFrequency(value);
+}
+
+void MainWindow::on_actionAbout_triggered()
+{
+    AboutDialog *dialog = new AboutDialog(this);
+    dialog->exec();
+}
+
+void MainWindow::on_actionAudio_file_triggered()
+{
+    if (m_machine != 0)
+    {
+        QString filename = openAudioFile();
+        if (m_machine->setAudioFile(filename))
+        {
+            QFileInfo info(filename);
+            m_lastAudioDirectory = info.path();
+        }
+        else
+        {
+            QMessageBox msgBox;
+            msgBox.setText("There was a problem loading the WAV file\nWrong format? I need a 2-channel/stereo file!");
+            msgBox.exec();
+        }
+    }
 }

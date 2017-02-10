@@ -27,6 +27,9 @@ public:
     ~MainWindow();
 
 private slots:
+    void scopeChannelChanged(uint32_t channel);
+    void spectrumChannelChanged(uint32_t channel);
+
     void on_actionExit_triggered();
     void on_GUITimer();
     void on_Slider1Changed(float value);
@@ -53,12 +56,13 @@ private slots:
 
     void on_recompileButton_clicked();
 
-    void scopeChannelChanged(uint32_t channel);
-    void spectrumChannelChanged(uint32_t channel);
-
     void on_freqLineEdit_editingFinished();
 
     void on_freqSlider_valueChanged(int value);
+
+    void on_actionAbout_triggered();
+
+    void on_actionAudio_file_triggered();
 
 protected:
     virtual void closeEvent(QCloseEvent *event);
@@ -100,6 +104,9 @@ private:
     /** compile the program */
     bool compileAndRun();
 
+    /** show a file dialog to open an audio file */
+    QString openAudioFile();
+
     Ui::MainWindow *ui;
 
     CodeEditor *m_sourceEditor;
@@ -122,6 +129,7 @@ private:
     QSettings m_settings;
     QString   m_filepath;
     QString   m_lastDirectory;
+    QString   m_lastAudioDirectory;
 };
 
 #endif // MAINWINDOW_H

@@ -70,10 +70,6 @@ VirtualMachine::VirtualMachine(QMainWindow *guiWindow)
         m_monitorVar[i] = NULL;
     }
 
-    //TODO: get configuration of soundcard
-    // from the registry or other
-    // configuration file ..
-
     m_inDevice = Pa_GetDefaultInputDevice();
     m_outDevice = Pa_GetDefaultOutputDevice();
     m_sampleRate = 44100.0f;
@@ -170,6 +166,26 @@ bool VirtualMachine::setMonitoringVariable(uint32_t ringBufID, uint32_t channel,
     qDebug() << "setMonitoringVariable " << varname.c_str();
 
     m_monitorVar[ringBufID*2 + channel] = &(m_vars[idx].value);
+    return true;
+}
+
+bool VirtualMachine::hasAudioFile()
+{
+    QMutexLocker lock(&m_controlMutex);
+    if (m_wavstreamer.isOK())
+    {
+        return true;
+    }
+    return false;
+}
+
+bool VirtualMachine::setAudioFile(const QString &filename)
+{
+    QMutexLocker lock(&m_controlMutex);
+    if (m_wavstreamer.openFile(filename) != 0)
+    {
+        return false;
+    }
     return true;
 }
 
@@ -362,6 +378,7 @@ void VirtualMachine::processSamples(float *inbuf, float *outbuf,
     m_leftLevel *= 0.9f;
     m_rightLevel *= 0.9f;
 
+    float wavBuffer[2];
     for(uint32_t i=0; i<framesPerBuffer; i++)
     {
         float left;
@@ -374,9 +391,10 @@ void VirtualMachine::processSamples(float *inbuf, float *outbuf,
             left = *inbuf++;
             right = *inbuf++;
             break;
-        case SRC_WAV:
-            left = 0.0f;
-            right = 0.0f;
+        case SRC_WAV:           
+            m_wavstreamer.fillBuffer(wavBuffer, 1);
+            left = wavBuffer[0];
+            right = wavBuffer[1];
             break;
         case SRC_NOISE:
             left = -1.0f+2.0f*static_cast<float>(rand())/RAND_MAX;
@@ -731,6 +749,9 @@ void VirtualMachine::dump(std::ostream &s)
                 break;
             case P_limit:
                 s << "LIMIT\n";
+                break;
+            case P_atan2:
+                s << "ATAN2\n";
                 break;
             default:
                 s << "UNKNOWN\n";

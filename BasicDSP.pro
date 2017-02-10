@@ -122,7 +122,10 @@ SOURCES += main.cpp\
         codeeditor.cpp\
         mainwindow.cpp\
         functiondefs.cpp\
-        soundcarddialog.cpp
+        soundcarddialog.cpp\
+        aboutdialog.cpp\
+        wavstreamer.cpp
+
 
 HEADERS  += mainwindow.h\
             vumeter.h\
@@ -141,12 +144,15 @@ HEADERS  += mainwindow.h\
             scopewidget.h \
             codeeditor.h\
             functiondefs.h\
-            soundcarddialog.h
+            soundcarddialog.h\
+            aboutdialog.h\
+            wavstreamer.h
 
 FORMS    += mainwindow.ui \
     spectrumwindow.ui \
     scopewindow.ui \
-    soundcarddialog.ui
+    soundcarddialog.ui \
+    aboutdialog.ui
 
 RESOURCES += \
     resources.qrc

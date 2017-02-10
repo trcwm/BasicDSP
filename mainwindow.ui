@@ -231,6 +231,7 @@
     </property>
     <addaction name="actionSoundcard"/>
     <addaction name="actionFont"/>
+    <addaction name="actionAudio_file"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuSetup"/>
@@ -291,6 +292,11 @@
   <action name="actionFont">
    <property name="text">
     <string>Font</string>
+   </property>
+  </action>
+  <action name="actionAudio_file">
+   <property name="text">
+    <string>Audio file ...</string>
    </property>
   </action>
  </widget>

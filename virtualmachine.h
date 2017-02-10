@@ -20,6 +20,7 @@
 #include "portaudio.h"
 #include "portaudio_helper.h"
 #include "pa_ringbuffer.h"
+#include "wavstreamer.h"
 
 #ifndef M_PI
 #define M_PI 3.1415927
@@ -133,6 +134,12 @@ public:
     /** set monitoring variables for ring buffer */
     bool setMonitoringVariable(uint32_t ringBufID, uint32_t channel, const std::string &varname);
 
+    /** set the audio file for the wav streamer */
+    bool setAudioFile(const QString &filename);
+
+    /** returns true if there is a valid audio file to use */
+    bool hasAudioFile();
+
     /** get a pointer to one of the two ring buffers
         to allow the reading of data by the GUI thread */
     PaUtilRingBuffer* getRingBufferPtr(uint32_t ringBufID);
@@ -217,6 +224,9 @@ protected:
 
     // thread-safe ring buffers for GUI I/O
     PaUtilRingBuffer m_ringbuffer[2];
+
+    // handles audio streaming from .wav files
+    WavStreamer m_wavstreamer;
 };
 
 #endif

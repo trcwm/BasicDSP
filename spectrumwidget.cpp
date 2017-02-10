@@ -2,7 +2,7 @@
 
   Spectrum display widget
 
-  Copyright 2006-2016
+  Copyright 2006-2017
   Niels A. Moseley
   Pieter-Tjerk de Boer
 
