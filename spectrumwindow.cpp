@@ -30,8 +30,18 @@ SpectrumWindow::SpectrumWindow(QWidget *parent) :
 
     m_chan1 = new QLineEdit(this);
     m_chan2 = new QLineEdit(this);
+    QLabel *m_chan1Label = new QLabel(this);
+    QLabel *m_chan2Label = new QLabel(this);
+    m_chan1Label->setText(" CH1 ");
+    m_chan2Label->setText(" CH2 ");
+    m_chan1Label->setStyleSheet("background-color: green");
+    m_chan2Label->setStyleSheet("background-color: yellow");
+
+    m_hsizer->addWidget(m_chan1Label);
     m_hsizer->addWidget(m_chan1);
+    m_hsizer->addWidget(m_chan2Label);
     m_hsizer->addWidget(m_chan2);
+
 
     connect(m_chan1, SIGNAL(textChanged(QString)), this, SLOT(chan1Changed()));
     connect(m_chan2, SIGNAL(textChanged(QString)), this, SLOT(chan2Changed()));

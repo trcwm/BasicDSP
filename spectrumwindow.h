@@ -15,6 +15,7 @@
 
 #include <QDialog>
 #include <QLineEdit>
+#include <QLabel>
 #include <QHBoxLayout>
 #include "spectrumwidget.h"
 #include "virtualmachine.h"
@@ -59,6 +60,8 @@ private:
     QHBoxLayout         *m_hsizer;
     QLineEdit           *m_chan1;
     QLineEdit           *m_chan2;
+    QLabel              *m_chan1Label;
+    QLabel              *m_chan2Label;
 };
 
 #endif // SPECTRUMWINDOW_H
