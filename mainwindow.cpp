@@ -215,7 +215,7 @@ bool MainWindow::saveScriptFile(const QString &filePath)
     QFile file;
     file.setFileName(filePath);
 
-    if (!file.open(QIODevice::ReadWrite | QIODevice::Text))
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
     {
         return false;
     }
