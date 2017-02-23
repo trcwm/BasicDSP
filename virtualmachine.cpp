@@ -638,6 +638,9 @@ void VirtualMachine::executeProgram(float inLeft, float inRight, float &outLeft,
                 else
                     stack[sp-1]=-1.0f;
                 break;
+            case P_noise:
+                stack[sp++]=-1.0f+2.0f*static_cast<float>(rand())/RAND_MAX;
+                break;
             default:
                 // TODO: produce error
                 break;
@@ -758,6 +761,9 @@ void VirtualMachine::dump(std::ostream &s)
                 break;
             case P_atan2:
                 s << "ATAN2\n";
+                break;
+            case P_noise:
+                s << "NOISE\n";
                 break;
             default:
                 s << "UNKNOWN\n";

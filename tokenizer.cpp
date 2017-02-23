@@ -18,22 +18,6 @@
 
 Tokenizer::Tokenizer()
 {
-#if 0
-    // define the keywords
-    // must be lower case!
-    m_functions.push_back(functionInfo_t{"sin",P_sin,1});
-    m_functions.push_back(functionInfo_t{"cos",P_cos,1});
-    m_functions.push_back(functionInfo_t{"sin1",P_sin1,1});
-    m_functions.push_back(functionInfo_t{"cos1",P_cos1,1});
-    m_functions.push_back(functionInfo_t{"mod1",P_mod1,1});
-    m_functions.push_back(functionInfo_t{"abs",P_abs,1});
-    m_functions.push_back(functionInfo_t{"round",P_round,1});
-    m_functions.push_back(functionInfo_t{"sqrt",P_sqrt,1});
-    m_functions.push_back(functionInfo_t{"tan",P_tan,1});
-    m_functions.push_back(functionInfo_t{"tanh",P_tanh,1});
-    m_functions.push_back(functionInfo_t{"pow",P_pow,2});
-    m_functions.push_back(functionInfo_t{"limit",P_limit,1});
-#endif
 }
 
 bool Tokenizer::isDigit(char c) const
