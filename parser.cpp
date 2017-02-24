@@ -363,7 +363,7 @@ ASTNode* Parser::acceptTermAccent1(state_t &s, ASTNode* leftNode)
     operationNode->right = rightNode;
 
     // note: acceptExprAccent will never return NULL
-    ASTNode *headNode = acceptExprAccent(s, operationNode);
+    ASTNode *headNode = acceptTermAccent(s, operationNode);
     return headNode;
 }
 
@@ -396,8 +396,8 @@ ASTNode* Parser::acceptTermAccent2(state_t &s, ASTNode* leftNode)
     operationNode->left = leftNode;
     operationNode->right = rightNode;
 
-    // note: acceptExprAccent will never return NULL
-    ASTNode *headNode = acceptExprAccent(s, operationNode);
+    // note: acceptTermAccent will never return NULL
+    ASTNode *headNode = acceptTermAccent(s, operationNode);
     return headNode;
 }
 
