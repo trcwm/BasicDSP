@@ -23,3 +23,5 @@ prod = insq*sign(ss);
 c = 0.001
 lp = (1-c)*lp + c*prod;
 
+% sinusoidal output
+out = sin1(saw)

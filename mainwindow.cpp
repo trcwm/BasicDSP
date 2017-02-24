@@ -398,6 +398,7 @@ bool MainWindow::compileAndRun()
             m_machine->setSlider(1, m_slider2->getValue());
             m_machine->setSlider(2, m_slider3->getValue());
             m_machine->setSlider(3, m_slider4->getValue());
+            m_machine->setFrequency(ui->freqSlider->value());
 
             m_machine->setMonitoringVariable(0,0,m_scope->getChannelName(0));
             m_machine->setMonitoringVariable(0,1,m_scope->getChannelName(1));
