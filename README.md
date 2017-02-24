@@ -1,13 +1,23 @@
-# BasicDSP v2.0 10-2-2017
+# BasicDSP v2.0 24-2-2017
 ## Documentation
 
 ### Introduction
 
-BasicDSP is an educational program that lets users experiment with simple Digital Signal Processing (DSP) algorithms.
+BasicDSP is an educational program that lets users experiment with simple Digital Signal Processing (DSP) algorithms. It compiles on Windows, OSX and Linux with QtCreator and the Qt framework.
 
-Note: there are still few missing features. Please be patient while we implement those and fix bugs.
+![Screenshot of BasicDSP](examples/screenshot_pll.png?raw=true "Screenshot of BasicDSP")
 
-### Commands
+For every input sample, a script is run to calculate an output sample. Input samples can come from a sound card or several built-in sources, including stereo .wav files. It features an oscilloscope and a spectrum analyzer
+
+BasicDSP can be used to explore DSP algorithms, such as:
+* Digital filters
+* Digital PLL design
+* Spectral analysis
+* Non-linear functions (waveshapers, frequency mixers etc)
+* Software-defined radio algorithms
+* Sigma-delta noise shapers
+
+### Script commands
 * mod1(x) - returns the remainer of a division by one.
 * sin1(x) - returns sin(2*pi*x)
 * cos1(x) - returns cos(2*pi*x)
@@ -31,3 +41,4 @@ Note: there are still few missing features. Please be patient while we implement
 * outl - left output channel of sound card
 * outr - right output channel of sound card
 * out - writes to both left and right output channels of sound card
+* samplerate - a read-only variable that contains the sample rate in Hz
