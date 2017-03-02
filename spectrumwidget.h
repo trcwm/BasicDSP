@@ -66,6 +66,14 @@ public:
         m_forceAxisRedraw = true;
     }
 
+    /** set the verical axis range in dB */
+    void setVerticalRange(float dB)
+    {
+        m_dbmax = 5.0f;
+        m_dbmin = -dB-5.0f;
+        m_forceAxisRedraw = true;
+    }
+
 protected:
     void paintEvent(QPaintEvent *event);
 

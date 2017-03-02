@@ -25,19 +25,26 @@
     </layout>
    </item>
    <item>
-    <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0" columnstretch="0,1">
+    <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0" columnstretch="0,1,0,1">
+     <item row="0" column="2">
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Vertical range</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QComboBox" name="smoothingBox"/>
+     </item>
+     <item row="0" column="1">
+      <widget class="QComboBox" name="windowTypeBox"/>
+     </item>
      <item row="0" column="0">
       <widget class="QLabel" name="label">
        <property name="text">
         <string>Window type</string>
        </property>
       </widget>
-     </item>
-     <item row="0" column="1">
-      <widget class="QComboBox" name="windowTypeBox"/>
-     </item>
-     <item row="1" column="1">
-      <widget class="QComboBox" name="smoothingBox"/>
      </item>
      <item row="1" column="0">
       <widget class="QLabel" name="label_2">
@@ -55,6 +62,9 @@
      </item>
      <item row="2" column="1">
       <widget class="QComboBox" name="modeBox"/>
+     </item>
+     <item row="0" column="3">
+      <widget class="QComboBox" name="verticalRangeBox"/>
      </item>
     </layout>
    </item>

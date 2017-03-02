@@ -87,6 +87,13 @@ SpectrumWindow::SpectrumWindow(QWidget *parent) :
 
     ui->modeBox->addItem("2 channel",0);
     ui->modeBox->addItem("IQ mode",1);
+
+    // populate vertical axis range box
+    ui->verticalRangeBox->addItem("60 dB",0);
+    ui->verticalRangeBox->addItem("80 dB",1);
+    ui->verticalRangeBox->addItem("100 dB",2);
+    ui->verticalRangeBox->addItem("120 dB",3);
+
 }
 
 SpectrumWindow::~SpectrumWindow()
@@ -166,6 +173,26 @@ void SpectrumWindow::on_modeBox_activated(int index)
         break;
     case 1: // IQ mode
         m_spectrum->setMode(fft::MODE_IQ);
+        break;
+    }
+}
+
+void SpectrumWindow::on_verticalRangeBox_activated(int index)
+{
+    switch(index)
+    {
+    default:
+    case 0: // 60 dB
+        m_spectrum->setVerticalRange(60.0f);
+        break;
+    case 1: // 80 dB
+        m_spectrum->setVerticalRange(80.0f);
+        break;
+    case 2: // 100 dB
+        m_spectrum->setVerticalRange(100.0f);
+        break;
+    case 3: // 120 dB
+        m_spectrum->setVerticalRange(120.0f);
         break;
     }
 }
