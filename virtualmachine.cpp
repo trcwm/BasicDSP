@@ -641,6 +641,15 @@ void VirtualMachine::executeProgram(float inLeft, float inRight, float &outLeft,
             case P_noise:
                 stack[sp++]=-1.0f+2.0f*static_cast<float>(rand())/RAND_MAX;
                 break;
+            case P_trunc:
+                stack[sp-1] = std::trunc(stack[sp-1]);
+                break;
+            case P_ceil:
+                stack[sp-1] = std::ceil(stack[sp-1]);
+                break;
+            case P_floor:
+                stack[sp-1] = std::floor(stack[sp-1]);
+                break;
             default:
                 // TODO: produce error
                 break;
@@ -764,6 +773,15 @@ void VirtualMachine::dump(std::ostream &s)
                 break;
             case P_noise:
                 s << "NOISE\n";
+                break;
+            case P_trunc:
+                s << "TRUNC\n";
+                break;
+            case P_ceil:
+                s << "CEIL\n";
+                break;
+            case P_floor:
+                s << "FLOOR\n";
                 break;
             default:
                 s << "UNKNOWN\n";

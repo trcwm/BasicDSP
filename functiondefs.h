@@ -19,7 +19,7 @@ struct functionInfo_t
     uint32_t      nargs;  // expected number of arguments
 };
 
-#define  g_functionDefsLen 15
+#define  g_functionDefsLen 18
 extern const functionInfo_t g_functionDefs[];
 
 namespace functionDefs

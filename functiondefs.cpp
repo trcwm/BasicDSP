@@ -25,7 +25,10 @@ const functionInfo_t g_functionDefs[] =
     {"limit",P_limit,1},
     {"atan2",P_atan2,2},
     {"sign",P_sign,1},
-    {"noise",P_noise,0}
+    {"noise",P_noise,0},
+    {"trunc",P_trunc,1},
+    {"ceil",P_ceil,1},
+    {"floor",P_floor,1}
 };
 
 int32_t functionDefs::getNumberOfArguments(uint32_t functionID)

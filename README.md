@@ -33,6 +33,9 @@ BasicDSP can be used to explore DSP algorithms, such as:
 * [atan2(y,x)](https://en.wikipedia.org/wiki/Atan2) - returns the arctangent of (y/x)
 * sign(x) - returns 1 if x>=0 and -1 if x < 0.
 * noise() - returns white noise with amplitude between -1 and 1.
+* trunc(x) - rounds x toward zero, returning the nearest integral value that is not larger in magnitude than x.
+* ceil(x) - rounds x upward, returning the smallest integral value that is not less than x.
+* floor(x) - rounds x downward, returning the largest integral value that is not greater than x.
 
 ### Variables
 * inl - left input channel

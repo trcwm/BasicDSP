@@ -50,6 +50,9 @@
 #define P_atan2 112
 #define P_sign  113
 #define P_noise 114
+#define P_trunc 115
+#define P_ceil  116
+#define P_floor 117
 
 //#define P_print 102
 
