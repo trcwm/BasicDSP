@@ -11,18 +11,31 @@
 #include <QDebug>
 #include "asttovm.h"
 
-bool ASTToVM::process(const statements_t &s,
+bool ASTToVM::process(const ParseContext &s,
                       VM::program_t &program,
                       VM::variables_t &variables)
 {
     program.clear();
     variables.clear();
 
-    size_t N = s.size();
-    for(size_t i=0; i<N; i++)
+    // add all the variables to the VM
+    auto iter = s.getVariables().begin();
+    while(iter != s.getVariables().end())
     {
-        if (!convertNode(s[i], program, variables))
+        VM::variable_t vt;
+        vt.name = (*iter).txt;
+        vt.value = 0.0f;
+        variables.push_back(vt);
+        iter++;
+    }
+
+    // convert all the statements to VM code
+    auto iter2 = s.getStatements().begin();
+    while(iter2 != s.getStatements().end())
+    {
+        if (!convertNode(*iter2, program, variables))
             return false;
+        iter2++;
     }
     return true;
 }
@@ -45,16 +58,14 @@ bool ASTToVM::convertNode(ASTNode *node,
     }
 
     // push arguments of functions here!
-    uint32_t nargs = node->function_args.size();
+    uint32_t nargs = node->m_functionArgs.size();
     for(uint32_t i=0; i<nargs; i++)
     {
-        convertNode(node->function_args[i], program, variables);
+        convertNode(node->m_functionArgs[i], program, variables);
     }
 
-    VM::variable_t var;
     VM::instruction_t instr;
-    int32_t idx;
-    switch(node->type)
+    switch(node->m_type)
     {
     default:
     case ASTNode::NodeUnknown:
@@ -66,28 +77,24 @@ bool ASTToVM::convertNode(ASTNode *node,
     case ASTNode::NodeFloat:    // literal float
         instr.icode = P_literal;
         program.push_back(instr);
-        instr.value = node->info.floatVal;
+        instr.value = node->m_literalFloat;
         program.push_back(instr);
         return true;
     case ASTNode::NodeInteger:
         // Literal integer, create an integer on the stack
         instr.icode = P_literal;
         program.push_back(instr);
-        instr.value = node->info.intVal;
+        instr.value = node->m_literalInt;
         program.push_back(instr);
         return true;
     case ASTNode::NodeIdent:
-        // resolve the identifier by name
-        idx = VM::findVariableByName(variables, node->info.txt);
-        if (idx == -1)
+        // Push the value of the variable on the stack
+        if (node->m_varIdx < 0)
         {
-            // variable not found, so add it to the list
-            var.name = node->info.txt;
-            var.value = 0.0f;
-            variables.push_back(var);
-            idx = variables.size()-1; // set variable index
+            // error! cannot find variable
+            return false;
         }
-        instr.icode = P_readvar | idx;
+        instr.icode = P_readvar | node->m_varIdx;
         program.push_back(instr);
         return true;
     // *************************************************
@@ -95,17 +102,13 @@ bool ASTToVM::convertNode(ASTNode *node,
     // *************************************************
     case ASTNode::NodeAssign:
     {
-        idx = VM::findVariableByName(variables, node->info.txt);
-        if (idx == -1)
+        // pop the value of the variable on the stack
+        if (node->m_varIdx < 0)
         {
-            // variable not found, so add it to the list
-            var.name = node->info.txt;
-            var.value = 0.0f;
-            variables.push_back(var);
-            idx = variables.size()-1; // set variable index
+            // error! cannot find variable
+            return false;
         }
-
-        instr.icode = P_writevar | idx;
+        instr.icode = P_writevar | node->m_varIdx;
         program.push_back(instr);
         return true;
     }
@@ -141,7 +144,7 @@ bool ASTToVM::convertNode(ASTNode *node,
     }
     case ASTNode::NodeFunction:
     {
-        instr.icode = node->functionID;
+        instr.icode = node->m_functionID;
         program.push_back(instr);
         return true;
     }

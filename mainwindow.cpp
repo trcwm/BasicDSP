@@ -350,15 +350,17 @@ bool MainWindow::compileAndRun()
         qDebug() << tokens[i].tokID;
     }
 
-    statements_t statements;
-    bool parseOK = parser.process(tokens, statements);
+    ParseContext context;
+    bool parseOK = parser.process(tokens, context);
 
     // write AST to the debug console
     qDebug() << "-- PARSE TREE -- ";
     std::stringstream ss;
-    for(uint32_t i=0; i<statements.size(); i++)
+    auto statementIterator = context.getStatements().begin();
+    while(statementIterator != context.getStatements().end())
     {
-        statements[i]->dump(ss,0);
+        (*statementIterator)->dump(ss,0);
+        statementIterator++;
     }
     qDebug() << ss.str().c_str();
 
@@ -379,8 +381,9 @@ bool MainWindow::compileAndRun()
 
     VM::program_t program;
     VM::variables_t vars;
-    if (!ASTToVM::process(statements, program, vars))
+    if (!ASTToVM::process(context, program, vars))
     {
+        ui->statusBar->showMessage("AST conversion failed!");
         qDebug() << "AST conversion failed! :(";
         return false;
     }

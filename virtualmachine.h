@@ -54,9 +54,6 @@
 #define P_ceil  116
 #define P_floor 117
 
-//#define P_print 102
-
-
 // the following opcodes use the lower 16 bits for further identifying a variable or FIR
 #define P_writevar 0x81000000
 #define P_readvar  0x82000000

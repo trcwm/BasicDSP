@@ -19,6 +19,10 @@ error = sig_in - error_fb - ns_out
 error_fb = -2.0*error + last_error
 last_error = error
 
-out = ns_out
+% output lowpass/reconstruction filter
+f = 0.05
+hp = ns_out - lp - bp
+bp = bp + f*hp
+lp = lp + f*bp
 
-
+out = lp

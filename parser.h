@@ -24,8 +24,6 @@
 struct varInfo
 {
     std::string     txt;        // identifier name, integer or float value.
-    int32_t         intVal;
-    float           floatVal;
 };
 
 /** Abstract Syntax Tree Node */
@@ -55,8 +53,8 @@ public:
     {
         left        = 0;
         right       = 0;
-        type        = nodeType;
-        functionID  = 0xFFFFFFFF;
+        m_type        = nodeType;
+        m_functionID  = 0xFFFFFFFF;
     }
 
     ~ASTNode()
@@ -65,13 +63,13 @@ public:
             delete left;
         if (right != 0)
             delete right;
-        for(uint32_t i=0; i<function_args.size(); i++)
+        for(uint32_t i=0; i<m_functionArgs.size(); i++)
         {
-            delete function_args[i];
+            delete m_functionArgs[i];
         }
     }
 
-    void dump(std::ostream &stream, uint32_t level = 0)
+    void dump(std::ostream &stream, uint32_t level = 0) const
     {
         if (left != 0)
         {
@@ -83,17 +81,29 @@ public:
             right->dump(stream, level+1);
         }
 
+        for(uint32_t i=0; i<m_functionArgs.size(); i++)
+        {
+            m_functionArgs[i]->dump(stream, level+1);
+        }
+
         // indent according to level
         for(uint32_t i=0; i<level; i++)
             stream << "  ";
 
-        switch(type)
+        switch(m_type)
         {
         case NodeUnknown:
             stream << "Unknown";
             break;
         case NodeAssign:
-            stream << info.txt << " = ";
+            if (m_varIdx != -1)
+            {
+                stream << "Assign varIdx = " << m_varIdx;
+            }
+            else
+            {
+                stream << "undefined variable!\n";
+            }
             break;
         case NodeAdd:
             stream << "+";
@@ -111,17 +121,30 @@ public:
             stream << "U-";
             break;
         case NodeIdent:
-            stream << info.txt;
+            if (m_varIdx != -1)
+            {
+                stream << "varIdx = " << m_varIdx;
+            }
+            else
+            {
+                stream << "undefined variable!\n";
+            }
             break;
         case NodeInteger:
-            stream << info.intVal << "(INT)";
+            if (m_varIdx != -1)
+                stream << m_literalInt << "(INT)";
             break;
         case NodeFunction:
-            stream << "Function " << info.txt;
+            stream << "Function ";
+            switch(m_functionID)
+            {
+            default:
+                stream << "unimplemented!\n";
+            }
             break;
         case NodeFloat:
-            stream << info.floatVal << "(FLOAT)";
-            //stream << floatVal;
+
+            stream << m_literalFloat << "(FLOAT)";
             break;
         default:
             stream << "???";
@@ -130,18 +153,57 @@ public:
         stream << std::endl;
     }
 
-    node_t          type;       // the type of the node
-    varInfo         info;       // variable related information
-    uint32_t        functionID; // function ID
+    node_t          m_type;         // the type of the node
+    uint32_t        m_varIdx;       // index into m_varInfo array of parseContext
+    int32_t         m_literalInt;
+    float           m_literalFloat;
+    uint32_t        m_functionID;   // function ID
 
     ASTNode  *left;
     ASTNode  *right;
 
     // function arguments go here instead of the left and right pointers!
-    std::vector<ASTNode *> function_args;
+    std::vector<ASTNode *> m_functionArgs;
 };
 
 typedef std::vector<ASTNode*> statements_t;
+
+
+
+/** object that keeps track of the state */
+class ParseContext
+{
+public:
+    size_t                tokIdx;
+    Reader::position_info tokPos;
+
+    /** get variable by name, or -1 if not found */
+    int32_t getVariableByName(const std::string &name);
+
+    /** create a variable and return its index */
+    int32_t createVariable(const std::string &name);
+
+    /** add a statement to the list of statement */
+    void addStatement(ASTNode* statement);
+
+    /** get (const) access to the statements */
+    const statements_t& getStatements() const
+    {
+        return m_statements;
+    }
+
+    /** get (const) access to variables */
+    const std::vector<varInfo>& getVariables() const
+    {
+        return m_varInfo;
+    }
+
+protected:
+    std::vector<varInfo>  m_varInfo;
+    statements_t          m_statements;
+};
+
+
 
 /** Parser to translate token stream from tokenizer/lexer to operation stack. */
 class Parser
@@ -154,7 +216,7 @@ public:
         When an error occurs, call getLastError() to get
         a human-readable string of the error.
     */
-    bool process(const std::vector<token_t> &tokens, statements_t &result);
+    bool process(const std::vector<token_t> &tokens, ParseContext &context);
 
     /** Return a description of the last parse error that occurred. */
     std::string getLastError() const
@@ -169,30 +231,18 @@ public:
     }
 
 protected:
-    struct state_t
-    {
-        size_t        tokIdx;
-        Reader::position_info tokPos;
-    };
-
     /* The following methods return true if the tokens starting from
        index 'tokIdx' are consistent with the production from the
-       FPTOOL grammar.
-
-       All functions return false when the production was not succesful.
-       Each method is responsible for filling in the 'newNode' information
-       and creating any subnodes needed for further processing by
-       recusively calling other accpet methods.
+       BasicDSP grammar.
     */
 
-    bool acceptProgram(state_t &s, statements_t &result);
-    ASTNode* acceptDefinition(state_t &s);
+    bool acceptProgram(ParseContext &context);
 
     /** production: assignment -> IDENT = expr */
-    ASTNode* acceptAssignment(state_t &s);
+    ASTNode* acceptAssignment(ParseContext &s);
 
     /** production: expr -> term expr' */
-    ASTNode* acceptExpr(state_t &s);
+    ASTNode* acceptExpr(ParseContext &s);
 
     /** production: expr' -> - term expr' | + term expr' | e
 
@@ -200,16 +250,16 @@ protected:
         epsilon production is invoked. Therfore,
         it will never return NULL.
     */
-    ASTNode* acceptExprAccent(state_t &s, ASTNode *leftNode);
+    ASTNode* acceptExprAccent(ParseContext &s, ASTNode *leftNode);
 
     /** production: expr' -> - term expr' */
-    ASTNode* acceptExprAccent1(state_t &s, ASTNode *leftNode);
+    ASTNode* acceptExprAccent1(ParseContext &s, ASTNode *leftNode);
 
     /** production: expr' -> + term expr' */
-    ASTNode* acceptExprAccent2(state_t &s, ASTNode *leftNode);
+    ASTNode* acceptExprAccent2(ParseContext &s, ASTNode *leftNode);
 
     /** production: term -> factor term' */
-    ASTNode* acceptTerm(state_t &s);
+    ASTNode* acceptTerm(ParseContext &s);
 
     /** production: term' -> * factor term' | / factor term' | e
 
@@ -217,33 +267,33 @@ protected:
         epsilon production is invoked. Therfore,
         it will never return NULL.
     */
-    ASTNode* acceptTermAccent(state_t &s, ASTNode *leftNode);
+    ASTNode* acceptTermAccent(ParseContext &s, ASTNode *leftNode);
 
     /** production: term' -> * factor term' */
-    ASTNode* acceptTermAccent1(state_t &s, ASTNode *leftNode);
+    ASTNode* acceptTermAccent1(ParseContext &s, ASTNode *leftNode);
 
     /** production: term' -> / factor term' */
-    ASTNode* acceptTermAccent2(state_t &s, ASTNode *leftNode);
+    ASTNode* acceptTermAccent2(ParseContext &s, ASTNode *leftNode);
 
-    ASTNode* acceptFactor(state_t &s);
+    ASTNode* acceptFactor(ParseContext &s);
 
     /** production: FUNCTION ( expr ) */
-    ASTNode* acceptFactor1(state_t &s);
+    ASTNode* acceptFactor1(ParseContext &s);
 
     /** production: ( expr ) */
-    ASTNode* acceptFactor2(state_t &s);
+    ASTNode* acceptFactor2(ParseContext &s);
 
     /** production: - factor */
-    ASTNode* acceptFactor3(state_t &s);
+    ASTNode* acceptFactor3(ParseContext &s);
 
     /** match a token, return true if matched and advance the token index. */
-    bool match(state_t &s, uint32_t tokenID);
+    bool match(ParseContext &s, uint32_t tokenID);
 
     /** match a NULL-terminated list of tokens. */
-    bool matchList(state_t &s, const uint32_t *tokenIDlist);
+    bool matchList(ParseContext &s, const uint32_t *tokenIDlist);
 
     /** Advance the token index and get the next token */
-    token_t next(state_t &s)
+    token_t next(ParseContext &s)
     {
         s.tokIdx++;
         token_t tok = getToken(s);
@@ -252,7 +302,7 @@ protected:
     }
 
     /** Get the current token, which or without an offset w.r.t.*/
-    token_t getToken(const state_t &s, int32_t offset = 0)
+    token_t getToken(const ParseContext &s, int32_t offset = 0)
     {
         token_t dummy_token;
 
@@ -270,7 +320,7 @@ protected:
     }
 
     /** Report an error */
-    void error(const state_t &s, const std::string &txt);
+    void error(const ParseContext &s, const std::string &txt);
     void error(uint32_t dummy, const std::string &txt);
 
     std::string   m_lastError;

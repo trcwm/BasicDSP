@@ -17,7 +17,7 @@
 class ASTToVM
 {
 public:
-    static bool process(const statements_t &s, VM::program_t &program, VM::variables_t &variables);
+    static bool process(const ParseContext &s, VM::program_t &program, VM::variables_t &variables);
 
 protected:
     static bool convertNode(ASTNode *node, VM::program_t &program, VM::variables_t &variables);

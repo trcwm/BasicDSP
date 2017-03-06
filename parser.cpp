@@ -12,6 +12,48 @@
 #include "functiondefs.h"
 #include "parser.h"
 
+// ********************************************************************************
+//   parseContext
+// ********************************************************************************
+
+void ParseContext::addStatement(ASTNode *statement)
+{
+    m_statements.push_back(statement);
+}
+
+int32_t ParseContext::createVariable(const std::string &name)
+{
+    int32_t checkIdx = getVariableByName(name);
+    if (checkIdx == -1)
+    {
+        varInfo info;
+        info.txt = name;
+        m_varInfo.push_back(info);
+        return (int32_t)(m_varInfo.size()-1);
+    }
+    else
+    {
+        return checkIdx;
+    }
+}
+
+int32_t ParseContext::getVariableByName(const std::string &name)
+{
+    const int32_t N=(int32_t)m_varInfo.size();
+
+    for(int32_t i=0; i<N; i++)
+    {
+        if (m_varInfo[i].txt == name)
+            return i;
+    }
+    return -1;
+}
+
+
+// ********************************************************************************
+//   Parser
+// ********************************************************************************
+
 Parser::Parser() : m_tokens(NULL)
 {
     m_lastErrorPos.line=0;
@@ -20,7 +62,7 @@ Parser::Parser() : m_tokens(NULL)
     m_lastError = std::string("Unknown error");
 }
 
-void Parser::error(const state_t &s, const std::string &txt)
+void Parser::error(const ParseContext &s, const std::string &txt)
 {
     m_lastError = txt;
     m_lastErrorPos = s.tokPos;
@@ -34,7 +76,7 @@ void Parser::error(uint32_t dummy, const std::string &txt)
     std::cout << txt.c_str() << std::endl;
 }
 
-bool Parser::match(state_t &s, uint32_t tokenID)
+bool Parser::match(ParseContext &s, uint32_t tokenID)
 {
     token_t tok = getToken(s);
     if (tok.tokID != tokenID)
@@ -45,7 +87,7 @@ bool Parser::match(state_t &s, uint32_t tokenID)
     return true;
 }
 
-bool Parser::matchList(state_t &s, const uint32_t *tokenIDlist)
+bool Parser::matchList(ParseContext &s, const uint32_t *tokenIDlist)
 {
     while (*tokenIDlist != 0)
     {
@@ -55,7 +97,7 @@ bool Parser::matchList(state_t &s, const uint32_t *tokenIDlist)
     return true;
 }
 
-bool Parser::process(const std::vector<token_t> &tokens, statements_t &result)
+bool Parser::process(const std::vector<token_t> &tokens, ParseContext &context)
 {
     m_lastError.clear();
 
@@ -68,41 +110,38 @@ bool Parser::process(const std::vector<token_t> &tokens, statements_t &result)
     // prepare for iteration
     m_tokens = &tokens;
 
-    state_t state;
-    state.tokIdx = 0;
-
-    return acceptProgram(state, result);
+    context.tokIdx = 0;
+    return acceptProgram(context);
 }
 
-bool Parser::acceptProgram(state_t &s, statements_t &statements)
+bool Parser::acceptProgram(ParseContext &context)
 {
     // productions: assignment | NEWLINE | SEMICOL | EOF
 
     bool productionAccepted = true;
-    token_t tok = getToken(s);
-
+    token_t tok = getToken(context);
 
     while(productionAccepted == true)
     {
         productionAccepted = false;
 
         ASTNode *node = 0;
-        if ((node=acceptAssignment(s)) != 0)
+        if ((node=acceptAssignment(context)) != 0)
         {
             productionAccepted = true;
-            statements.push_back(node);
+            context.addStatement(node);
         }
-        else if (match(s, TOK_NEWLINE))
-        {
-            productionAccepted = true;
-            // do nothing..
-        }
-        else if (match(s, TOK_SEMICOL))
+        else if (match(context, TOK_NEWLINE))
         {
             productionAccepted = true;
             // do nothing..
         }
-        else if (match(s, TOK_EOF))
+        else if (match(context, TOK_SEMICOL))
+        {
+            productionAccepted = true;
+            // do nothing..
+        }
+        else if (match(context, TOK_EOF))
         {
             return true;
         }
@@ -110,10 +149,10 @@ bool Parser::acceptProgram(state_t &s, statements_t &statements)
     return false;
 }
 
-ASTNode* Parser::acceptAssignment(state_t &s)
+ASTNode* Parser::acceptAssignment(ParseContext &s)
 {
     // production: IDENT EQUAL expr SEMICOL
-    state_t savestate = s;
+    ParseContext savestate = s;
 
     if (!match(s,TOK_IDENT))
     {
@@ -139,15 +178,14 @@ ASTNode* Parser::acceptAssignment(state_t &s)
     }
 
     /* we've match an assignment node! */
-
     ASTNode *assignNode = new ASTNode(ASTNode::NodeAssign);
-    assignNode->info.txt = identifier;
+    assignNode->m_varIdx = s.createVariable(identifier);
     assignNode->right = exprNode;
 
     return assignNode;
 }
 
-ASTNode* Parser::acceptExpr(state_t &s)
+ASTNode* Parser::acceptExpr(ParseContext &s)
 {
     // productions: term expr'
     //
@@ -156,7 +194,7 @@ ASTNode* Parser::acceptExpr(state_t &s)
     // added as the left leaf
     //
 
-    state_t savestate = s;
+    ParseContext savestate = s;
 
     ASTNode *leftNode = 0;
     if ((leftNode=acceptTerm(s)) != NULL)
@@ -175,7 +213,7 @@ ASTNode* Parser::acceptExpr(state_t &s)
     return NULL;
 }
 
-ASTNode* Parser::acceptExprAccent(state_t &s, ASTNode *leftNode)
+ASTNode* Parser::acceptExprAccent(ParseContext &s, ASTNode *leftNode)
 {
     // production: - term expr' | + term expr' | epsilon
     //
@@ -188,7 +226,7 @@ ASTNode* Parser::acceptExprAccent(state_t &s, ASTNode *leftNode)
     // matched
     //
 
-    state_t savestate = s;
+    ParseContext savestate = s;
 
     ASTNode *topNode = 0;
     if ((topNode = acceptExprAccent1(s, leftNode)) != 0)
@@ -209,10 +247,10 @@ ASTNode* Parser::acceptExprAccent(state_t &s, ASTNode *leftNode)
     return leftNode;
 }
 
-ASTNode* Parser::acceptExprAccent1(state_t &s, ASTNode *leftNode)
+ASTNode* Parser::acceptExprAccent1(ParseContext &s, ASTNode *leftNode)
 {
     // production: - term expr'
-    state_t savestate = s;
+    ParseContext savestate = s;
 
     if (!match(s, TOK_MINUS))
     {
@@ -243,10 +281,10 @@ ASTNode* Parser::acceptExprAccent1(state_t &s, ASTNode *leftNode)
     return headNode;
 }
 
-ASTNode* Parser::acceptExprAccent2(state_t &s, ASTNode *leftNode)
+ASTNode* Parser::acceptExprAccent2(ParseContext &s, ASTNode *leftNode)
 {
     // production: + term expr'
-    state_t savestate = s;
+    ParseContext savestate = s;
 
     if (!match(s, TOK_PLUS))
     {
@@ -277,10 +315,10 @@ ASTNode* Parser::acceptExprAccent2(state_t &s, ASTNode *leftNode)
     return headNode;
 }
 
-ASTNode* Parser::acceptTerm(state_t &s)
+ASTNode* Parser::acceptTerm(ParseContext &s)
 {
     // production: factor term'
-    state_t savestate = s;
+    ParseContext savestate = s;
 
     ASTNode *leftNode = 0;
     if ((leftNode=acceptFactor(s)) != NULL)
@@ -299,7 +337,7 @@ ASTNode* Parser::acceptTerm(state_t &s)
     return NULL;
 }
 
-ASTNode* Parser::acceptTermAccent(state_t &s, ASTNode *leftNode)
+ASTNode* Parser::acceptTermAccent(ParseContext &s, ASTNode *leftNode)
 {
     // production: * factor term' | / factor term' | epsilon
     //
@@ -312,7 +350,7 @@ ASTNode* Parser::acceptTermAccent(state_t &s, ASTNode *leftNode)
     // matched
     //
 
-    state_t savestate = s;
+    ParseContext savestate = s;
 
     ASTNode *topNode = 0;
     if ((topNode = acceptTermAccent1(s, leftNode)) != 0)
@@ -333,10 +371,10 @@ ASTNode* Parser::acceptTermAccent(state_t &s, ASTNode *leftNode)
     return leftNode;
 }
 
-ASTNode* Parser::acceptTermAccent1(state_t &s, ASTNode* leftNode)
+ASTNode* Parser::acceptTermAccent1(ParseContext &s, ASTNode* leftNode)
 {
     // production: * factor term'
-    state_t savestate = s;
+    ParseContext savestate = s;
 
     if (!match(s, TOK_STAR))
     {
@@ -367,10 +405,10 @@ ASTNode* Parser::acceptTermAccent1(state_t &s, ASTNode* leftNode)
     return headNode;
 }
 
-ASTNode* Parser::acceptTermAccent2(state_t &s, ASTNode* leftNode)
+ASTNode* Parser::acceptTermAccent2(ParseContext &s, ASTNode* leftNode)
 {
     // production: / factor term'
-    state_t savestate = s;
+    ParseContext savestate = s;
 
     if (!match(s, TOK_SLASH))
     {
@@ -402,9 +440,9 @@ ASTNode* Parser::acceptTermAccent2(state_t &s, ASTNode* leftNode)
 }
 
 
-ASTNode* Parser::acceptFactor(state_t &s)
+ASTNode* Parser::acceptFactor(ParseContext &s)
 {
-    state_t savestate = s;
+    ParseContext savestate = s;
 
     // FUNCTION ( expr )
     ASTNode *factorNode = 0;
@@ -431,21 +469,22 @@ ASTNode* Parser::acceptFactor(state_t &s)
     if (match(s, TOK_INTEGER))
     {
         factorNode = new ASTNode(ASTNode::NodeInteger);
-        factorNode->info.intVal = atoi(getToken(s, -1).txt.c_str());
+        factorNode->m_literalInt = atoi(getToken(s, -1).txt.c_str());
         return factorNode;    // INTEGER
     }
 
     if (match(s, TOK_FLOAT))
     {
         factorNode = new ASTNode(ASTNode::NodeFloat);
-        factorNode->info.floatVal = atof(getToken(s, -1).txt.c_str());
+        factorNode->m_literalFloat = atof(getToken(s, -1).txt.c_str());
         return factorNode;    // FLOAT
     }
 
     if (match(s, TOK_IDENT))
     {
         factorNode = new ASTNode(ASTNode::NodeIdent);
-        factorNode->info.txt = getToken(s, -1).txt;
+        uint32_t varIdx = s.createVariable(getToken(s, -1).txt);
+        factorNode->m_varIdx = varIdx;
         return factorNode;    // IDENT
     }
 
@@ -453,11 +492,11 @@ ASTNode* Parser::acceptFactor(state_t &s)
     return NULL;
 }
 
-ASTNode* Parser::acceptFactor1(state_t &s)
+ASTNode* Parser::acceptFactor1(ParseContext &s)
 {
     // production: FUNCTION ( expr )
 
-    state_t savestate = s;
+    ParseContext savestate = s;
     token_t func = getToken(s);
     if (func.tokID < 100)
     {
@@ -486,8 +525,7 @@ ASTNode* Parser::acceptFactor1(state_t &s)
     }
 
     ASTNode* factorNode = new ASTNode(ASTNode::NodeFunction);
-    factorNode->info.txt = func.txt;
-    factorNode->functionID = func.tokID;
+    factorNode->m_functionID = func.tokID;
     factorNode->left = 0;
     factorNode->right = 0;
 
@@ -502,7 +540,7 @@ ASTNode* Parser::acceptFactor1(state_t &s)
             delete factorNode;
             return NULL;
         }
-        factorNode->function_args.push_back(exprNode);
+        factorNode->m_functionArgs.push_back(exprNode);
         argcnt++;
 
         // if there are arguments left, we need to see a comma
@@ -529,9 +567,9 @@ ASTNode* Parser::acceptFactor1(state_t &s)
 }
 
 
-ASTNode* Parser::acceptFactor2(state_t &s)
+ASTNode* Parser::acceptFactor2(ParseContext &s)
 {
-    state_t savestate = s;
+    ParseContext savestate = s;
     if (!match(s, TOK_LPAREN))
     {
         s = savestate;
@@ -553,10 +591,10 @@ ASTNode* Parser::acceptFactor2(state_t &s)
 }
 
 
-ASTNode* Parser::acceptFactor3(state_t &s)
+ASTNode* Parser::acceptFactor3(ParseContext &s)
 {
     // production: - factor
-    state_t savestate = s;
+    ParseContext savestate = s;
     if (!match(s, TOK_MINUS))
     {
         s = savestate;

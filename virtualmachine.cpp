@@ -696,16 +696,16 @@ void VirtualMachine::dump(std::ostream &s)
     size_t N = m_program.size();
     for(size_t i=0; i<N; i++)
     {
-        uint32_t n = m_program[i].icode & 0xFFFF; // variable index)
+        uint32_t varIdx = m_program[i].icode & 0xFFFF; // variable index)
         if (m_program[i].icode & 0x80000000)
         {
             switch(m_program[i].icode & 0xff000000)
             {
             case P_readvar:
-                s << "READ " << m_vars[n].name.c_str() << "\n";
+                s << "READ " << m_vars[varIdx].name.c_str() << "\n";
                 break;
             case P_writevar:
-                s << "WRITE " << m_vars[n].name.c_str() << "\n";
+                s << "WRITE " << m_vars[varIdx].name.c_str() << "\n";
                 break;
             default:
                 s << "UNKNOWN\n";
