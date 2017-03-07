@@ -53,6 +53,7 @@
 #define P_trunc 115
 #define P_ceil  116
 #define P_floor 117
+#define P_choose 118
 
 // the following opcodes use the lower 16 bits for further identifying a variable or FIR
 #define P_writevar 0x81000000

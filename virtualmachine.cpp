@@ -650,6 +650,17 @@ void VirtualMachine::executeProgram(float inLeft, float inRight, float &outLeft,
             case P_floor:
                 stack[sp-1] = std::floor(stack[sp-1]);
                 break;
+            case P_choose:
+                sp-=2;
+                if (stack[sp-1] >= 0.0f)
+                {
+                    stack[sp-1]=stack[sp];
+                }
+                else
+                {
+                    stack[sp-1]=stack[sp+1];
+                }
+                break;
             default:
                 // TODO: produce error
                 break;
@@ -782,6 +793,9 @@ void VirtualMachine::dump(std::ostream &s)
                 break;
             case P_floor:
                 s << "FLOOR\n";
+                break;
+            case P_choose:
+                s << "CHOOSE\n";
                 break;
             default:
                 s << "UNKNOWN\n";

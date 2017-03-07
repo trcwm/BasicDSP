@@ -80,6 +80,11 @@ void SpectrumWidget::submit256Samples(const VirtualMachine::ring_buffer_data_t *
         // add 1e-20f to stop log10 from producing NaNs.
         float mag = m_fftsig[i].s1*m_fftsig[i].s1 + m_fftsig[i].s2*m_fftsig[i].s2+1e-20f;
         m_smoothed[i] = mag + m_avgConstant*(m_smoothed[i]-mag);
+        // check for NaNs
+        if (m_smoothed[i] != m_smoothed[i])
+        {
+            m_smoothed[i] = 1e-20f;
+        }
         m_dbData[i] = 10.0f*log10(m_smoothed[i]);
     }
 }

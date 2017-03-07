@@ -28,7 +28,8 @@ const functionInfo_t g_functionDefs[] =
     {"noise",P_noise,0},
     {"trunc",P_trunc,1},
     {"ceil",P_ceil,1},
-    {"floor",P_floor,1}
+    {"floor",P_floor,1},
+    {"choose", P_choose,3}
 };
 
 int32_t functionDefs::getNumberOfArguments(uint32_t functionID)
