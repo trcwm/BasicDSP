@@ -18,6 +18,7 @@
 // the m_keywords vector in Tokenizer
 // ************************************
 
+// single character tokens
 #define TOK_UNKNOWN 0
 #define TOK_NEWLINE 1
 #define TOK_LPAREN  2
@@ -31,7 +32,13 @@
 #define TOK_EQUAL   10
 #define TOK_SLASH   11
 #define TOK_COMMA   13
+#define TOK_LBRACKET 14
+#define TOK_RBRACKET 15
 
+// keyword tokens, excluding functions
+#define TOK_DELAY   20
+
+// other tokens
 #define TOK_INTEGER 30
 #define TOK_FLOAT   31
 #define TOK_IDENT   32

@@ -359,7 +359,7 @@ bool MainWindow::compileAndRun()
     auto statementIterator = context.getStatements().begin();
     while(statementIterator != context.getStatements().end())
     {
-        (*statementIterator)->dump(ss,0);
+        (*statementIterator)->dump(ss,context.m_variables,0);
         statementIterator++;
     }
     qDebug() << ss.str().c_str();
@@ -413,7 +413,7 @@ bool MainWindow::compileAndRun()
             qDebug() << " - Variables -";
             for(size_t i=0; i<vars.size(); i++)
             {
-                qDebug() << vars[i].name.c_str();
+                qDebug() << vars[i].m_name.c_str();
             }
             return true;
         }

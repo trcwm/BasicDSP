@@ -18,13 +18,9 @@
 #include <memory>
 #include <ostream>
 
+#include "functiondefs.h"
+#include "varinfo.h"
 #include "tokenizer.h"
-
-/** variable related information */
-struct varInfo
-{
-    std::string     txt;        // identifier name, integer or float value.
-};
 
 /** Abstract Syntax Tree Node */
 class ASTNode
@@ -46,7 +42,10 @@ public:
                NodeUnaryMinus,
                NodeIdent,
                NodeInteger,
-               NodeFloat
+               NodeFloat,
+               NodeDelayDefinition,
+               NodeDelayLookup,
+               NodeDelayAssign
               };
 
     ASTNode(node_t nodeType = NodeUnknown)
@@ -54,6 +53,7 @@ public:
         left        = 0;
         right       = 0;
         m_type        = nodeType;
+        m_varIdx    = -1;
         m_functionID  = 0xFFFFFFFF;
     }
 
@@ -69,27 +69,28 @@ public:
         }
     }
 
-    void dump(std::ostream &stream, uint32_t level = 0) const
+    void dump(std::ostream &stream, const std::vector<varInfo> &vars, uint32_t level = 0) const
     {
         if (left != 0)
         {
-            left->dump(stream, level+1);
+            left->dump(stream, vars, level+1);
         }
 
         if (right != 0)
         {
-            right->dump(stream, level+1);
+            right->dump(stream, vars, level+1);
         }
 
         for(uint32_t i=0; i<m_functionArgs.size(); i++)
         {
-            m_functionArgs[i]->dump(stream, level+1);
+            m_functionArgs[i]->dump(stream, vars, level+1);
         }
 
         // indent according to level
         for(uint32_t i=0; i<level; i++)
             stream << "  ";
 
+        uint32_t temp;
         switch(m_type)
         {
         case NodeUnknown:
@@ -98,7 +99,7 @@ public:
         case NodeAssign:
             if (m_varIdx != -1)
             {
-                stream << "Assign varIdx = " << m_varIdx;
+                stream << vars[m_varIdx].m_name << " = ";
             }
             else
             {
@@ -123,7 +124,7 @@ public:
         case NodeIdent:
             if (m_varIdx != -1)
             {
-                stream << "varIdx = " << m_varIdx;
+                stream << vars[m_varIdx].m_name;
             }
             else
             {
@@ -135,15 +136,27 @@ public:
                 stream << m_literalInt << "(INT)";
             break;
         case NodeFunction:
-            stream << "Function ";
-            switch(m_functionID)
+            temp = m_functionID-100;
+            if (temp < g_functionDefsLen)
             {
-            default:
-                stream << "unimplemented!\n";
+                stream << "Function " << g_functionDefs[temp].name;
+            }
+            else
+            {
+                stream << "Function unknown!";
             }
             break;
+        case NodeDelayAssign:
+            stream << "Delay " << vars[m_varIdx].m_name << "= ";
+            break;
+        case NodeDelayLookup:
+            stream << vars[m_varIdx].m_name << "[]";
+            break;
+        case NodeDelayDefinition:
+            stream << "Delay def: " << vars[m_varIdx].m_name << "[";
+            stream << vars[m_varIdx].m_length << "]";
+            break;
         case NodeFloat:
-
             stream << m_literalFloat << "(FLOAT)";
             break;
         default:
@@ -154,7 +167,8 @@ public:
     }
 
     node_t          m_type;         // the type of the node
-    uint32_t        m_varIdx;       // index into m_varInfo array of parseContext
+    int32_t         m_varIdx;       // index into m_varInfo array of parseContext
+                                    // is -1 if no variable assigned
     int32_t         m_literalInt;
     float           m_literalFloat;
     uint32_t        m_functionID;   // function ID
@@ -181,7 +195,7 @@ public:
     int32_t getVariableByName(const std::string &name);
 
     /** create a variable and return its index */
-    int32_t createVariable(const std::string &name);
+    int32_t createVariable(const std::string &name, varInfo::type_t varType = varInfo::TYPE_VAR);
 
     /** add a statement to the list of statement */
     void addStatement(ASTNode* statement);
@@ -192,14 +206,9 @@ public:
         return m_statements;
     }
 
-    /** get (const) access to variables */
-    const std::vector<varInfo>& getVariables() const
-    {
-        return m_varInfo;
-    }
+    std::vector<varInfo>  m_variables;
 
 protected:
-    std::vector<varInfo>  m_varInfo;
     statements_t          m_statements;
 };
 
@@ -238,11 +247,15 @@ protected:
 
     bool acceptProgram(ParseContext &context);
 
+
     /** production: assignment -> IDENT = expr */
     ASTNode* acceptAssignment(ParseContext &s);
 
     /** production: expr -> term expr' */
     ASTNode* acceptExpr(ParseContext &s);
+
+    /** production: DELAY IDENTIFIER '[' INTEGER ']' */
+    ASTNode* acceptDelayDefinition(ParseContext &s);
 
     /** production: expr' -> - term expr' | + term expr' | e
 
@@ -275,16 +288,23 @@ protected:
     /** production: term' -> / factor term' */
     ASTNode* acceptTermAccent2(ParseContext &s, ASTNode *leftNode);
 
+    /** production:
+       acceptFactor1 | acceptFactor2 |
+       acceptFactor3 | acceptFactor4 |
+       INTEGER | FLOAT | IDENT */
     ASTNode* acceptFactor(ParseContext &s);
 
-    /** production: FUNCTION ( expr ) */
+    /** production: DELAYIDENT [ expr ] */
     ASTNode* acceptFactor1(ParseContext &s);
 
-    /** production: ( expr ) */
+    /** production: FUNCTION ( expr ) */
     ASTNode* acceptFactor2(ParseContext &s);
 
-    /** production: - factor */
+    /** production: ( expr ) */
     ASTNode* acceptFactor3(ParseContext &s);
+
+    /** production: - factor */
+    ASTNode* acceptFactor4(ParseContext &s);
 
     /** match a token, return true if matched and advance the token index. */
     bool match(ParseContext &s, uint32_t tokenID);

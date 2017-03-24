@@ -146,7 +146,8 @@ HEADERS  += mainwindow.h\
             functiondefs.h\
             soundcarddialog.h\
             aboutdialog.h\
-            wavstreamer.h
+            wavstreamer.h\
+            varinfo.h
 
 FORMS    += mainwindow.ui \
     spectrumwindow.ui \

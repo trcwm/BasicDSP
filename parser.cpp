@@ -21,15 +21,16 @@ void ParseContext::addStatement(ASTNode *statement)
     m_statements.push_back(statement);
 }
 
-int32_t ParseContext::createVariable(const std::string &name)
+int32_t ParseContext::createVariable(const std::string &name, varInfo::type_t varType)
 {
     int32_t checkIdx = getVariableByName(name);
     if (checkIdx == -1)
     {
         varInfo info;
-        info.txt = name;
-        m_varInfo.push_back(info);
-        return (int32_t)(m_varInfo.size()-1);
+        info.m_name = name;
+        info.m_type = varType;
+        m_variables.push_back(info);
+        return (int32_t)(m_variables.size()-1);
     }
     else
     {
@@ -39,11 +40,11 @@ int32_t ParseContext::createVariable(const std::string &name)
 
 int32_t ParseContext::getVariableByName(const std::string &name)
 {
-    const int32_t N=(int32_t)m_varInfo.size();
+    const int32_t N=(int32_t)m_variables.size();
 
     for(int32_t i=0; i<N; i++)
     {
-        if (m_varInfo[i].txt == name)
+        if (m_variables[i].m_name == name)
             return i;
     }
     return -1;
@@ -116,7 +117,7 @@ bool Parser::process(const std::vector<token_t> &tokens, ParseContext &context)
 
 bool Parser::acceptProgram(ParseContext &context)
 {
-    // productions: assignment | NEWLINE | SEMICOL | EOF
+    // productions: assignment | delaydefinition | NEWLINE | SEMICOL | EOF
 
     bool productionAccepted = true;
     token_t tok = getToken(context);
@@ -127,6 +128,11 @@ bool Parser::acceptProgram(ParseContext &context)
 
         ASTNode *node = 0;
         if ((node=acceptAssignment(context)) != 0)
+        {
+            productionAccepted = true;
+            context.addStatement(node);
+        }
+        else if ((node=acceptDelayDefinition(context)) != 0)
         {
             productionAccepted = true;
             context.addStatement(node);
@@ -148,6 +154,7 @@ bool Parser::acceptProgram(ParseContext &context)
     }
     return false;
 }
+
 
 ASTNode* Parser::acceptAssignment(ParseContext &s)
 {
@@ -172,18 +179,94 @@ ASTNode* Parser::acceptAssignment(ParseContext &s)
     ASTNode *exprNode = 0;
     if ((exprNode=acceptExpr(s)) == 0)
     {
-        error(s,"Expression expected");
+        //error(s,"Expression expected");
         s = savestate;
         return NULL;
     }
 
     /* we've match an assignment node! */
-    ASTNode *assignNode = new ASTNode(ASTNode::NodeAssign);
-    assignNode->m_varIdx = s.createVariable(identifier);
-    assignNode->right = exprNode;
+    int32_t varIdx = s.createVariable(identifier);
+    ASTNode *assignNode = 0;
+    if (s.m_variables[varIdx].m_type == varInfo::TYPE_DELAY)
+    {
+        // this is a delay assignment!
+        assignNode = new ASTNode(ASTNode::NodeDelayAssign);
+        assignNode->m_varIdx = varIdx;
+        assignNode->right = exprNode;
+    }
+    else
+    {
+        // this is regular assignment!
+        assignNode = new ASTNode(ASTNode::NodeAssign);
+        assignNode->m_varIdx = varIdx;
+        assignNode->right = exprNode;
+    }
 
     return assignNode;
 }
+
+
+ASTNode* Parser::acceptDelayDefinition(ParseContext &s)
+{
+    // production: DELAY IDENT '[' INTEGER ']'
+    ParseContext savestate = s;
+
+    if (!match(s,TOK_DELAY))
+    {
+        s = savestate;
+        return NULL;
+    }
+
+    if (!match(s,TOK_IDENT))
+    {
+        s = savestate;
+        return NULL;
+    }
+
+    if (!match(s,TOK_LBRACKET))
+    {
+        s = savestate;
+        return NULL;
+    }
+
+    if (!match(s,TOK_INTEGER))
+    {
+        error(s,"Integer expected");
+        s = savestate;
+        return NULL;
+    }
+
+    if (!match(s,TOK_RBRACKET))
+    {
+        s = savestate;
+        return NULL;
+    }
+
+    std::string identifier = getToken(s, -4).txt;
+    std::string lenstr     = getToken(s,-2).txt;
+
+    int32_t delayLen = atoi(lenstr.c_str());
+    if (delayLen <= 0)
+    {
+        error(s, "Delay length cannot be zero or negative!");
+        return NULL;
+    }
+
+    /* create delay variable.
+       Note: do not allocate the delay memory here
+             because the destructor will de-allocate it
+             and varInfo's are copied before they
+             reach the virtual machine.
+
+             Allocation is done by the VM itself!
+    */
+
+    ASTNode *delayNode = new ASTNode(ASTNode::NodeDelayDefinition);
+    delayNode->m_varIdx = s.createVariable(identifier, varInfo::TYPE_DELAY);
+    s.m_variables[delayNode->m_varIdx].m_length = delayLen;
+    return delayNode;
+}
+
 
 ASTNode* Parser::acceptExpr(ParseContext &s)
 {
@@ -444,23 +527,29 @@ ASTNode* Parser::acceptFactor(ParseContext &s)
 {
     ParseContext savestate = s;
 
-    // FUNCTION ( expr )
+    // DELAYIDENT '[' expr ']'
     ASTNode *factorNode = 0;
     if ((factorNode=acceptFactor1(s)) != NULL)
     {
         return factorNode;
     }
 
-    s = savestate;
-    // ( expr )
+    // FUNCTION ( expr )
     if ((factorNode=acceptFactor2(s)) != NULL)
     {
         return factorNode;
     }
 
     s = savestate;
-    // - factor
+    // ( expr )
     if ((factorNode=acceptFactor3(s)) != NULL)
+    {
+        return factorNode;
+    }
+
+    s = savestate;
+    // - factor
+    if ((factorNode=acceptFactor4(s)) != NULL)
     {
         return factorNode;
     }
@@ -481,9 +570,23 @@ ASTNode* Parser::acceptFactor(ParseContext &s)
     }
 
     if (match(s, TOK_IDENT))
-    {
+    {        
+        // we have to check here if we have a delay
+        // variable because these cannot be used as
+        // regular variables
+        uint32_t varIdx = s.getVariableByName(getToken(s, -1).txt);
+        if (varIdx != -1)
+        {
+           if (s.m_variables[varIdx].m_type == varInfo::TYPE_DELAY)
+           {
+               error(s, "Cannot use a delay variable without an index");
+               return NULL;
+           }
+        }
+
+        // if needed, create the variable
+        varIdx = s.createVariable(getToken(s,-1).txt);
         factorNode = new ASTNode(ASTNode::NodeIdent);
-        uint32_t varIdx = s.createVariable(getToken(s, -1).txt);
         factorNode->m_varIdx = varIdx;
         return factorNode;    // IDENT
     }
@@ -492,7 +595,59 @@ ASTNode* Parser::acceptFactor(ParseContext &s)
     return NULL;
 }
 
+
 ASTNode* Parser::acceptFactor1(ParseContext &s)
+{
+    // DELAYIDENT '[' expr ']'
+    ParseContext savestate = s;
+    if (!match(s, TOK_IDENT))
+    {
+        s = savestate;
+        return NULL;
+    }
+
+    if (!match(s, TOK_LBRACKET))
+    {
+        s = savestate;
+        return NULL;
+    }
+
+    std::string varname = getToken(s,-2).txt;
+
+    // get the expression argument
+    ASTNode *exprNode = 0;
+    if ((exprNode=acceptExpr(s)) == NULL)
+    {
+        s = savestate;
+        return NULL;
+    }
+
+    // check if identifier is of a delay type!
+    int32_t varIdx = s.getVariableByName(varname);
+    if (varIdx < 0)
+    {
+        delete exprNode;
+        s = savestate;
+        error(s,"Undefined delay variable!");
+        return NULL;
+    }
+
+    if (!match(s, TOK_RBRACKET))
+    {
+        delete exprNode;
+        s = savestate;
+        return NULL;
+    }
+
+    // create a delayline lookup node
+    ASTNode *delayNode = new ASTNode(ASTNode::NodeDelayLookup);
+    delayNode->m_varIdx = varIdx;
+    delayNode->left = exprNode;
+    return delayNode;
+}
+
+
+ASTNode* Parser::acceptFactor2(ParseContext &s)
 {
     // production: FUNCTION ( expr )
 
@@ -567,7 +722,7 @@ ASTNode* Parser::acceptFactor1(ParseContext &s)
 }
 
 
-ASTNode* Parser::acceptFactor2(ParseContext &s)
+ASTNode* Parser::acceptFactor3(ParseContext &s)
 {
     ParseContext savestate = s;
     if (!match(s, TOK_LPAREN))
@@ -591,7 +746,7 @@ ASTNode* Parser::acceptFactor2(ParseContext &s)
 }
 
 
-ASTNode* Parser::acceptFactor3(ParseContext &s)
+ASTNode* Parser::acceptFactor4(ParseContext &s)
 {
     // production: - factor
     ParseContext savestate = s;

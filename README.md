@@ -46,3 +46,13 @@ BasicDSP can be used to explore DSP algorithms, such as:
 * outr - right output channel of sound card
 * out - writes to both left and right output channels of sound card
 * samplerate - a read-only variable that contains the sample rate in Hz
+
+### Build instructions
+* Download and install QtCreator and Qt 5.5 (or a higher 5.x release).
+* Start QtCreator.
+* Load the basicdsp.pro project file.
+* Configure the Qt toolchain when asked, i.e. where to build the binary.
+* Change to a Release build if desired (option in lower left-hand corner).
+* Choose Build -> Build All from the main menu.
+* If all goes well, you should have a working binary.
+* Report bugs to @TRC_WM on twitter or send mail to: n.a.moseley _email_at_sign_ gmail.com

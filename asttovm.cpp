@@ -18,16 +18,8 @@ bool ASTToVM::process(const ParseContext &s,
     program.clear();
     variables.clear();
 
-    // add all the variables to the VM
-    auto iter = s.getVariables().begin();
-    while(iter != s.getVariables().end())
-    {
-        VM::variable_t vt;
-        vt.name = (*iter).txt;
-        vt.value = 0.0f;
-        variables.push_back(vt);
-        iter++;
-    }
+    // copy all the variables to the VM
+    variables = s.m_variables;
 
     // convert all the statements to VM code
     auto iter2 = s.getStatements().begin();
@@ -97,18 +89,46 @@ bool ASTToVM::convertNode(ASTNode *node,
         instr.icode = P_readvar | node->m_varIdx;
         program.push_back(instr);
         return true;
+    case ASTNode::NodeDelayDefinition:
+        // do nothing, the variable as already been added
+        // to the VM
+        return true;
     // *************************************************
     //  operations that pop and push stuff on the stack
     // *************************************************
     case ASTNode::NodeAssign:
     {
-        // pop the value of the variable on the stack
+        // push the ID of the variable on the stack
         if (node->m_varIdx < 0)
         {
             // error! cannot find variable
             return false;
         }
         instr.icode = P_writevar | node->m_varIdx;
+        program.push_back(instr);
+        return true;
+    }
+    case ASTNode::NodeDelayAssign:
+    {
+        // push the ID of the delay onto the stack
+        if (node->m_varIdx < 0)
+        {
+            // error! cannot find variable
+            return false;
+        }
+        instr.icode = P_writedelay | node->m_varIdx;
+        program.push_back(instr);
+        return true;
+    }
+    case ASTNode::NodeDelayLookup:
+    {
+        // push the ID of the delay onto the stack
+        if (node->m_varIdx < 0)
+        {
+            // error! cannot find variable
+            return false;
+        }
+        instr.icode = P_readdelay | node->m_varIdx;
         program.push_back(instr);
         return true;
     }

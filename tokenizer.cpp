@@ -150,6 +150,18 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
                 result.push_back(tok);
                 r->accept();
             }
+            else if (c == ']')
+            {
+                tok.tokID = TOK_RBRACKET;
+                result.push_back(tok);
+                r->accept();
+            }
+            else if (c == '[')
+            {
+                tok.tokID = TOK_LBRACKET;
+                result.push_back(tok);
+                r->accept();
+            }
             else if (c == '=')
             {
                 tok.tokID = TOK_EQUAL;
@@ -274,7 +286,7 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
             }
             else
             {
-                // check if it is a keyword
+                // check if it is a function
                 bool found = false;
                 for(size_t i=0; i<g_functionDefsLen; i++)
                 {
@@ -286,6 +298,13 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
                         found = true;
                         continue;
                     }
+                }
+                // check if it's a keyword
+                if (tok.txt == std::string("delay"))
+                {
+                    tok.tokID = TOK_DELAY;
+                    found = true;
+                    result.push_back(tok);
                 }
                 if (!found)
                 {

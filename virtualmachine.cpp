@@ -25,7 +25,7 @@ int32_t VM::findVariableByName(const variables_t &vars, const std::string &name)
     size_t i=0;
     while(i<N)
     {
-        if (vars[i].name == name)
+        if (vars[i].m_name == name)
             return (int32_t)i;
         i++;
     }
@@ -165,7 +165,7 @@ bool VirtualMachine::setMonitoringVariable(uint32_t ringBufID, uint32_t channel,
 
     qDebug() << "setMonitoringVariable " << varname.c_str();
 
-    m_monitorVar[ringBufID*2 + channel] = &(m_vars[idx].value);
+    m_monitorVar[ringBufID*2 + channel] = &(m_vars[idx].m_value);
     return true;
 }
 
@@ -201,33 +201,48 @@ void VirtualMachine::loadProgram(const VM::program_t &program, const VM::variabl
     // find the lout, rout, lin, rin, in, out
     // variables.
     int32_t idx = VM::findVariableByName(m_vars, "inl");
-    if (idx != -1) m_lin = &(m_vars[idx].value);
+    if (idx != -1) m_lin = &(m_vars[idx].m_value);
     idx = VM::findVariableByName(m_vars, "inr");
-    if (idx != -1) m_rin = &(m_vars[idx].value);
+    if (idx != -1) m_rin = &(m_vars[idx].m_value);
     idx = VM::findVariableByName(m_vars, "outl");
-    if (idx != -1) m_lout = &(m_vars[idx].value);
+    if (idx != -1) m_lout = &(m_vars[idx].m_value);
     idx = VM::findVariableByName(m_vars, "outr");
-    if (idx != -1) m_rout = &(m_vars[idx].value);
+    if (idx != -1) m_rout = &(m_vars[idx].m_value);
     idx = VM::findVariableByName(m_vars, "out");
-    if (idx != -1) m_out = &(m_vars[idx].value);
+    if (idx != -1) m_out = &(m_vars[idx].m_value);
     idx = VM::findVariableByName(m_vars, "in");
-    if (idx != -1) m_in = &(m_vars[idx].value);
+    if (idx != -1) m_in = &(m_vars[idx].m_value);
 
     // setup sliders
     idx = VM::findVariableByName(m_vars, "slider1");
-    if (idx != -1) m_slider[0] = &(m_vars[idx].value);
+    if (idx != -1) m_slider[0] = &(m_vars[idx].m_value);
     idx = VM::findVariableByName(m_vars, "slider2");
-    if (idx != -1) m_slider[1] = &(m_vars[idx].value);
+    if (idx != -1) m_slider[1] = &(m_vars[idx].m_value);
     idx = VM::findVariableByName(m_vars, "slider3");
-    if (idx != -1) m_slider[2] = &(m_vars[idx].value);
+    if (idx != -1) m_slider[2] = &(m_vars[idx].m_value);
     idx = VM::findVariableByName(m_vars, "slider4");
-    if (idx != -1) m_slider[3] = &(m_vars[idx].value);
+    if (idx != -1) m_slider[3] = &(m_vars[idx].m_value);
 
     // setup sample rate
     idx = VM::findVariableByName(m_vars, "samplerate");
     if (idx != -1)
     {
-        m_vars[idx].value = m_sampleRate;
+        m_vars[idx].m_value = m_sampleRate;
+    }
+
+    // setup the delay lines
+    for(uint32_t i=0; i<m_vars.size(); i++)
+    {
+        if (m_vars[i].m_type != varInfo::TYPE_DELAY)
+            continue;
+
+        if (m_vars[i].m_data != 0)
+        {
+            delete[] m_vars[i].m_data;
+        }
+        m_vars[i].m_idx = 0;
+        m_vars[i].m_data = new float[m_vars[i].m_length];
+        memset(m_vars[i].m_data, 0, sizeof(float)*m_vars[i].m_length);
     }
 }
 
@@ -533,23 +548,32 @@ void VirtualMachine::executeProgram(float inLeft, float inRight, float &outLeft,
     while(pc < instructions)
     {
         VM::instruction_t instruction = m_program[pc++];
+        int32_t offset; // for delay access
         if (instruction.icode & 0x80000000)
         {
             // special instruction with additional parameter
             uint32_t n = instruction.icode & 0xFFFF;
             switch(instruction.icode & 0xff000000)
             {
-            case P_readvar: // push
-                stack[sp++] = m_vars[n].value;
+            case P_readvar:     // push
+                stack[sp++] = m_vars[n].m_value;
                 break;
-            case P_writevar:// pop
-                m_vars[n].value = stack[--sp];
+            case P_writevar:    // pop
+                m_vars[n].m_value = stack[--sp];
                 break;
             case P_fir:
                 sp-=execFIR(n, stack+sp);
                 break;
             case P_biquad:
                 sp-=execBiquad(n, stack+sp);
+                break;
+            case P_writedelay:  // write to the start of the delay
+                m_vars[n].m_data[m_vars[n].m_idx] = stack[--sp];
+                break;
+            case P_readdelay:   // read from the delay
+                offset = std::floor(stack[sp-1]);   // get offset of delay
+                offset = (m_vars[n].m_idx+offset) % m_vars[n].m_length;
+                stack[sp-1] = m_vars[n].m_data[offset];
                 break;
             default:
                 // TODO: produce error
@@ -697,6 +721,19 @@ void VirtualMachine::executeProgram(float inLeft, float inRight, float &outLeft,
             outRight = 0.0f;
         }
     }
+
+    // update the delay line pointers
+    for(uint32_t i=0; i<m_vars.size(); i++)
+    {
+        if (m_vars[i].m_type == varInfo::TYPE_DELAY)
+        {
+            m_vars[i].m_idx--;
+            if (m_vars[i].m_idx < 0)
+            {
+                m_vars[i].m_idx = m_vars[i].m_length-1;
+            }
+        }
+    }
 }
 
 void VirtualMachine::dump(std::ostream &s)
@@ -713,10 +750,16 @@ void VirtualMachine::dump(std::ostream &s)
             switch(m_program[i].icode & 0xff000000)
             {
             case P_readvar:
-                s << "READ " << m_vars[varIdx].name.c_str() << "\n";
+                s << "READ " << m_vars[varIdx].m_name.c_str() << "\n";
                 break;
             case P_writevar:
-                s << "WRITE " << m_vars[varIdx].name.c_str() << "\n";
+                s << "WRITE " << m_vars[varIdx].m_name.c_str() << "\n";
+                break;
+            case P_readdelay:
+                s << "READDELAY " << m_vars[varIdx].m_name.c_str() << "\n";
+                break;
+            case P_writedelay:
+                s << "WRITEDELAY " << m_vars[varIdx].m_name.c_str() << "\n";
                 break;
             default:
                 s << "UNKNOWN\n";

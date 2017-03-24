@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <vector>
 #include <QMutex>
+#include "varinfo.h"
 #include "qmainwindow.h"
 #include "portaudio.h"
 #include "portaudio_helper.h"
@@ -56,10 +57,12 @@
 #define P_choose 118
 
 // the following opcodes use the lower 16 bits for further identifying a variable or FIR
-#define P_writevar 0x81000000
-#define P_readvar  0x82000000
-#define P_fir      0x83000000
-#define P_biquad   0x84000000
+#define P_writevar      0x81000000
+#define P_readvar       0x82000000
+#define P_fir           0x83000000
+#define P_biquad        0x84000000
+#define P_writedelay    0x85000000
+#define P_readdelay     0x86000000
 
 namespace VM
 {
@@ -69,14 +72,8 @@ namespace VM
         float    value;
     };
 
-    struct variable_t
-    {
-        std::string name;
-        float       value;
-    };
-
     typedef std::vector<instruction_t> program_t;
-    typedef std::vector<variable_t>    variables_t;
+    typedef std::vector<varInfo>       variables_t;
 
     /** find a variable by name. returns -1 if not found */
     int32_t findVariableByName(const variables_t &vars, const std::string &name);
