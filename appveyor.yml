@@ -16,7 +16,20 @@ build_script:
   
 #after_build:
 
-#artifacts:
-#  - path: Output\fastqt-*.exe
-#  - path: release
-#type: zip
+artifacts:
+  - path: release\BasicDSP.exe
+type: zip
+
+# See: https://ci.appveyor.com/tools/encrypt
+deploy:
+  release: myproduct-v$(appveyor_build_version)
+  description: 'BasicDSP 64-bit windows binary'
+  provider: GitHub
+  auth_token:
+    secure: KrfGWHTb26AlgQb3nrffO1P0RqhX0O8FLT4DYlhkofgWW9zySIyTTisnD4KoN3MY # your encrypted token from GitHub
+  artifact: /.*\.zip/              # upload all zip packages to release assets
+  draft: false
+  prerelease: false
+  on:
+    branch: master                 # release from master branch only
+    appveyor_repo_tag: true        # deploy on tag push only
