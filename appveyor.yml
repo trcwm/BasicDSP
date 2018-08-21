@@ -15,10 +15,13 @@ build_script:
   - nmake
   
 after_build:
+  - cd "installer"
+  - call "C:\Program Files (x86)\NSIS\makensis.exe basicdsp.nsi"
+  - cd ".."
   - ps: |
-      Push-AppveyorArtifact release\BasicDSP.exe -FileName BasicDSP.exe
+      Push-AppveyorArtifact installer\basicdsp_installer_x64.exe -FileName basicdsp_installer_x64.exe
   - ls
-  - ls release
+  - ls installer
 
 #artifacts:
 #  - path: release\BasicDSP.exe
@@ -27,7 +30,7 @@ after_build:
 
 # See: https://ci.appveyor.com/tools/encrypt
 deploy:
-  description: 'BasicDSP 64-bit windows binary'
+  description: 'BasicDSP 64-bit installer'
   provider: GitHub
   auth_token:
     secure: AfcsCy2CYmodNEHdPy+DJ4BQXvYdATXLV3m/N2vhq3Xpy7SgauXQ0/t/81TZd2vM
