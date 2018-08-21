@@ -14,23 +14,24 @@ build_script:
   - qmake BasicDSP.pro
   - nmake
   
-#after_build:
+after_build:
+  - ps: |
+      Push-AppveyorArtifact release\BasicDSP.exe -FileName BasicDSP.exe
+  - ls
+  - ls release
 
-artifacts:
-  - path: release\BasicDSP.exe
-    name: BasicDSP-v$(appveyor_build_version)
-    type: zip
+#artifacts:
+#  - path: release\BasicDSP.exe
+#    name: BasicDSP-$(APPVEYOR_REPO_TAG_NAME)
+#    type: zip
 
 # See: https://ci.appveyor.com/tools/encrypt
 deploy:
-  release: BasicDSP-v$(appveyor_build_version)
   description: 'BasicDSP 64-bit windows binary'
   provider: GitHub
   auth_token:
     secure: AfcsCy2CYmodNEHdPy+DJ4BQXvYdATXLV3m/N2vhq3Xpy7SgauXQ0/t/81TZd2vM
-  artifact: /.*\.zip/              # upload all zip packages to release assets
-  draft: false
-  prerelease: false
+  #artifact: /.*\.zip/              # upload all zip packages to release assets
   on:
     branch: master                 # release from master branch only
     appveyor_repo_tag: true        # deploy on tag push only
