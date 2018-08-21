@@ -60,7 +60,7 @@ Section "Install BasicDSP (required)"
   SetOutPath $INSTDIR
   
   ; Put file there
-  File "release\BasicDSP.exe"
+  File "C:\projects\basicdsp\release\BasicDSP.exe"
   File "C:\Qt\5.11.1\msvc2017_64\bin\Qt5Core.dll"
   File "C:\Qt\5.11.1\msvc2017_64\bin\Qt5Gui.dll"
   File "C:\Qt\5.11.1\msvc2017_64\bin\Qt5Widgets.dll"
