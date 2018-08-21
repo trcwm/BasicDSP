@@ -7,17 +7,15 @@ image:
     
 install:
   - set QTDIR=C:\Qt\5.11.1\msvc2017_64
-  - set PATH=%QTDIR%\bin;C:\Qt\Tools\mingw530_32\bin;%PATH%;
+  - set PATH=%QTDIR%\bin;"C:\Program Files (x86)\NSIS";%PATH%;
   - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
 
 build_script:
   - qmake BasicDSP.pro
   - nmake
+  - makensis installer\basicdsp_appveyor.nsi
   
 after_build:
-  - cd "installer"
-  - call "C:\Program Files (x86)\NSIS\makensis.exe basicdsp.nsi"
-  - cd ".."
   - ps: |
       Push-AppveyorArtifact installer\basicdsp_installer_x64.exe -FileName basicdsp_installer_x64.exe
   - ls
