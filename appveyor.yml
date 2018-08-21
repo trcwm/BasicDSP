@@ -18,11 +18,12 @@ build_script:
 
 artifacts:
   - path: release\BasicDSP.exe
-  - type: zip
+    name: BasicDSP
+    type: zip
 
 # See: https://ci.appveyor.com/tools/encrypt
 deploy:
-  release: myproduct-v$(appveyor_build_version)
+  release: BasicDSP-v$(appveyor_build_version)
   description: 'BasicDSP 64-bit windows binary'
   provider: GitHub
   auth_token:
