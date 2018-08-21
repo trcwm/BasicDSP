@@ -7,7 +7,7 @@ image:
     
 install:
   - set QTDIR=C:\Qt\5.11.1\msvc2017_64
-  - set PATH=%QTDIR%\bin;"C:\Program Files (x86)\NSIS";%PATH%
+  - set PATH=%QTDIR%\bin;C:\Qt\Tools\mingw530_32\bin;"C:\Program Files (x86)\NSIS";%PATH%
   - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
 
 build_script:
