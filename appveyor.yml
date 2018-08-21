@@ -13,7 +13,8 @@ install:
 build_script:
   - qmake BasicDSP.pro
   - nmake
-  - ls
+  - pwd
+  - ls release
   - makensis installer\basicdsp_appveyor.nsi
   
 after_build:
