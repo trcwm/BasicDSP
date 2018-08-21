@@ -1,5 +1,5 @@
 # BasicDSP v2.0 24-2-2017
-!(https://ci.appveyor.com/api/projects/status/kha245h887fatvtl?svg=true)
+[![Build status](https://ci.appveyor.com/api/projects/status/kha245h887fatvtl?svg=true)](https://ci.appveyor.com/project/trcwm/basicdsp)
 
 ## Documentation
 
