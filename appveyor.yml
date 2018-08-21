@@ -27,7 +27,7 @@ deploy:
   description: 'BasicDSP 64-bit windows binary'
   provider: GitHub
   auth_token:
-    secure: KrfGWHTb26AlgQb3nrffO1P0RqhX0O8FLT4DYlhkofgWW9zySIyTTisnD4KoN3MY # your encrypted token from GitHub
+    secure: AfcsCy2CYmodNEHdPy+DJ4BQXvYdATXLV3m/N2vhq3Xpy7SgauXQ0/t/81TZd2vM
   artifact: /.*\.zip/              # upload all zip packages to release assets
   draft: false
   prerelease: false

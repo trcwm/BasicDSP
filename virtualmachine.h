@@ -106,7 +106,7 @@ public:
     }
 
     /** execute VM */
-    void processSamples(float *inbuf,
+    void processSamples(const float *inbuf,
                         float *outbuf,
                         uint32_t framesPerBuffer);
 

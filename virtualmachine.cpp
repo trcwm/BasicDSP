@@ -44,7 +44,7 @@ static int portaudioCallback(
     (timeInfo);
 
     /* Cast data passed through stream to our structure. */
-    float *inbuf = (float*)inputBuffer;
+    const float *inbuf = (const float*)inputBuffer;
     float *outbuf = (float*)outputBuffer;
 
     if (userData != 0)
@@ -321,9 +321,18 @@ bool VirtualMachine::start()
             return true;
         }
     }
-
-    qDebug() << "Portaudio: " << Pa_GetErrorText(error) << "\n";
-
+    else
+    {
+        if (error == paUnanticipatedHostError)
+        {
+            const PaHostErrorInfo *info = Pa_GetLastHostErrorInfo();
+            qDebug() << "Portaudio host error: " << info->errorText << "\n";
+        }
+        else
+        {
+            qDebug() << "Portaudio: " << Pa_GetErrorText(error) << "\n";
+        }
+    }
     return false;
 }
 
@@ -367,7 +376,7 @@ void VirtualMachine::setFrequency(double Hz)
     m_freq = Hz;
 }
 
-void VirtualMachine::processSamples(float *inbuf, float *outbuf,
+void VirtualMachine::processSamples(const float *inbuf, float *outbuf,
                                     uint32_t framesPerBuffer)
 {
     // as this is a time-critical function that is
