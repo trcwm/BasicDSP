@@ -1,4 +1,6 @@
 # BasicDSP v2.0 24-2-2017
+!(https://ci.appveyor.com/api/projects/status/kha245h887fatvtl?svg=true)
+
 ## Documentation
 
 ### Introduction
