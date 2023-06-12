@@ -9,7 +9,7 @@
 #ifndef core_h
 #define core_h
 
-#include "wav_streamer.h"
+#include "wavstreamer.h"
 
 void coremain(void);
 

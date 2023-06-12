@@ -49,7 +49,7 @@ uint32_t CodeEditor::lineNumberAreaWidth()
         ++digits;
     }
 
-    uint32_t space = fontMetrics().width(QLatin1Char('X')) * (digits+1);
+    uint32_t space = fontMetrics().horizontalAdvance(QLatin1Char('X')) * (digits+1);
 
     return space;
 }

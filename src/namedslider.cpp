@@ -34,7 +34,7 @@ NamedSlider::NamedSlider(QString name, QWidget *parent)
     m_layout->addWidget(m_edit);
 
     // remove margins to get a tigher layout!
-    m_layout->setMargin(0);
+    m_layout->setContentsMargins(0,0,0,0);
 
     //BUG: double validator doesn't seem to work properly..
     //m_validator.setRange(0.0, 10.0, 5);

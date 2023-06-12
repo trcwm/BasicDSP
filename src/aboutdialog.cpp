@@ -1,8 +1,7 @@
 
 #include "aboutdialog.h"
 #include "ui_aboutdialog.h"
-
-#define __VERSION__ "2.0a"
+#include "version.h"
 
 AboutDialog::AboutDialog(QWidget *parent) :
     QDialog(parent),
@@ -13,7 +12,9 @@ AboutDialog::AboutDialog(QWidget *parent) :
     if (m_pixmap != NULL)
         ui->imageLabel->setPixmap(*m_pixmap);
 
-    ui->versionInfo->setText("Version: " __VERSION__ " compiled on " __DATE__);
+    QString versionString;
+    versionString.asprintf("Version: %s compiled on %s", BASICDSPVERSIONSTRING, __DATE__);
+    ui->versionInfo->setText(versionString);
 }
 
 AboutDialog::~AboutDialog()

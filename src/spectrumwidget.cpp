@@ -136,7 +136,7 @@ void SpectrumWidget::paintEvent(QPaintEvent *event)
                 bpainter.setPen(Qt::gray);
                 bpainter.drawLine(0, ypos, width()-1, ypos);
                 string = QString("%1dB").arg(db,3,'d',0);
-                uint32_t fontWidth  = fm.width(string)+2;
+                uint32_t fontWidth  = fm.horizontalAdvance(string)+2;
                 QRect textRect(1,ypos-fontHeight/2,fontWidth,fontHeight);
                 bpainter.fillRect(textRect,Qt::black);
                 bpainter.setPen(Qt::white);
@@ -147,7 +147,7 @@ void SpectrumWidget::paintEvent(QPaintEvent *event)
         // draw the x-axis
         const int32_t steps[] = {1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000,0};
         uint32_t idx = 0;
-        uint32_t labelWidth  = fm.width("XXXXXXXX");
+        uint32_t labelWidth  = fm.horizontalAdvance("XXXXXXXX");
         int maxLabels = width()/labelWidth;
         while((m_fmax-m_fmin)/steps[idx] > maxLabels && steps[idx+1]>0)
             idx++;
@@ -171,7 +171,7 @@ void SpectrumWidget::paintEvent(QPaintEvent *event)
             {
                 string = QString("%1 Hz").arg((double)i,3,'d',0);
             }
-            int32_t txtWidth  = fm.width(string)+2;
+            int32_t txtWidth  = fm.horizontalAdvance(string)+2;
             if ((x-txtWidth/2.0f) < 0)
             {
                 // adjust for off-screen label left side

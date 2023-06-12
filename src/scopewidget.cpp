@@ -169,7 +169,7 @@ void ScopeWidget::paintEvent(QPaintEvent *event)
             bpainter.setPen(Qt::gray);
             bpainter.drawLine(0, ypos, width()-1, ypos);
             string = QString("%1").arg(y,2,'f',1);
-            uint32_t fontWidth  = fm.width(string)+2;
+            uint32_t fontWidth  = fm.horizontalAdvance(string)+2;
             QRect textRect(1,ypos-fontHeight/2,fontWidth,fontHeight);
             bpainter.fillRect(textRect,Qt::black);
             bpainter.setPen(Qt::white);
@@ -181,7 +181,7 @@ void ScopeWidget::paintEvent(QPaintEvent *event)
                                50.0e-3f, 100.0e-3f,
                                200.0e-3f, 500e-3f, 1.0f, 2.0f, 0.0f};
         uint32_t idx = 0;
-        uint32_t labelWidth  = fm.width("XXXXXXXX");
+        uint32_t labelWidth  = fm.horizontalAdvance("XXXXXXXX");
         int maxLabels = width()/labelWidth;
         while(static_cast<int32_t>(m_timespan/steps[idx]) > maxLabels && steps[idx+1]>0)
             idx++;
@@ -205,7 +205,7 @@ void ScopeWidget::paintEvent(QPaintEvent *event)
             {
                 string = QString("%1 ms").arg((double)i*1000.0f,3,'d',0);
             }
-            int32_t txtWidth  = fm.width(string)+2;
+            int32_t txtWidth  = fm.horizontalAdvance(string)+2;
             if ((x-txtWidth/2.0f) < 0)
             {
                 // adjust for off-screen label left side

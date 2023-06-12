@@ -12,7 +12,7 @@
 #include <math.h>
 #include <ctype.h>
 
-#include "wav_streamer.h"
+#include "wavstreamer.h"
 
 #include "core.h"
 
