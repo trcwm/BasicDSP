@@ -8,6 +8,9 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
+    setlocale(LC_ALL, "C");
+    QLocale::setDefault(QLocale::c());
+
     QCoreApplication::setOrganizationName("MoseleyInstruments");
     QCoreApplication::setOrganizationDomain("www.moseleyinstruments.com");
     QCoreApplication::setApplicationName("BasicDSP");
