@@ -58,22 +58,17 @@ set (PORTAUDIO
 
 if (UNIX)
     find_package(ALSA REQUIRED)
-    #find_package(Jack REQUIRED)
     add_definitions(-DPA_USE_ALSA)
-    #add_definitions(-DPA_USE_JACK)
     
     set (PORTAUDIO ${PORTAUDIO}
         ${PA_DIR}/src/os/unix/pa_unix_hostapis.c
         ${PA_DIR}/src/os/unix/pa_unix_util.c
         ${PA_DIR}/src/hostapi/alsa/pa_linux_alsa.c
-        #${PA_DIR}/src/hostapi/jack/pa_jack.c
     )
 
     add_library(portaudio STATIC ${PORTAUDIO})
-    #target_include_directories(portaudio PRIVATE ${ALSA_INCLUDE_DIRS} ${JACK_INCLUDE_DIR} ${PA_DIR}/include ${PA_DIR}/src/common ${PA_DIR}/src/os/unix)
     target_include_directories(portaudio PRIVATE ${ALSA_INCLUDE_DIRS} ${PA_DIR}/include ${PA_DIR}/src/common ${PA_DIR}/src/os/unix)
     target_include_directories(portaudio INTERFACE ${PA_DIR}/include ${PA_DIR}/src/common)
-    #target_link_libraries(portaudio ${ALSA_LIBRARIES} ${JACK_LIBRARY})
     target_link_libraries(portaudio ${ALSA_LIBRARIES})
 endif (UNIX)
 
@@ -108,7 +103,7 @@ endif (WIN32)
 
 if(APPLE)
     # for MacOS X or iOS, watchOS, tvOS (since 3.10.3)
-
+    # TODO:
 endif()
 
 ############################################################
@@ -117,8 +112,10 @@ endif()
 
 find_package(Qt6 REQUIRED QUIET COMPONENTS Core Widgets Gui)
 
-add_executable(basicdsp
-    src/resources.qrc
+qt_add_resources(RSRCFILES resources/resources.qrc)
+
+add_executable(basicdsp    
+    ${RSRCFILES}
     src/aboutdialog.cpp
     src/aboutdialog.ui
     src/asttovm.cpp
@@ -147,6 +144,8 @@ add_executable(basicdsp
     src/mainwindow.ui
     src/main.cpp
 )
+
+
 
 target_link_libraries(basicdsp Qt6::Widgets portaudio kissfft)
 
