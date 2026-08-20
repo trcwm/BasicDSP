@@ -50,11 +50,20 @@ BasicDSP can be used to explore DSP algorithms, such as:
 * samplerate - a read-only variable that contains the sample rate in Hz
 
 ### Build instructions
-* Download and install QtCreator and Qt 5.5 (or a higher 5.x release).
-* Start QtCreator.
-* Load the basicdsp.pro project file.
-* Configure the Qt toolchain when asked, i.e. where to build the binary.
-* Change to a Release build if desired (option in lower left-hand corner).
-* Choose Build -> Build All from the main menu.
-* If all goes well, you should have a working binary.
-* Report bugs to @TRC_WM on twitter or send mail to: n.a.moseley _email_at_sign_ gmail.com
+This project uses [CMAKE](https://cmake.org) and [Ninja Build](http://https://ninja-build.org/) to build the executable. See your distribution's package manager on how to obtain these tools. On Debian/Ubuntu you can get them through:
+```
+apt-get install cmake
+apt-get install ninja-build
+```
+
+You also need the ALSA development library, ``libasound2-dev`` on Debian/Ubuntu.
+
+Execute the ``bootstrap_release.sh`` script provided in the project directory. This will cause CMAKE to generate build scripts that Ninja Build uses to build the project. Any missing dependencies will be flagged by CMAKE.
+
+After the ``bootstrap_release.sh`` executes you will have a ``./build`` directory. Execute the following to build the project:
+```
+cd build
+ninja
+```
+
+If all goes well, you should have a working binary. Please Report bugs to @trcwn@mastodon.social on Mastodon or file a github issue.
