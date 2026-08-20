@@ -1,2 +1,4 @@
+.vscode
+ci
 build
 src/version.cpp
